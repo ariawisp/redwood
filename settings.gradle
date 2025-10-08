@@ -2,9 +2,23 @@ pluginManagement {
   includeBuild('build-support/redwood-settings')
 
   repositories {
+    maven { url = uri('../kotlin/build/repo') }
+    mavenLocal()
     mavenCentral()
     google()
     gradlePluginPortal()
+    // Kotlin dev and Compose dev repos for bleeding-edge toolchains
+    maven { url = uri('https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev') }
+    maven { url = uri('https://maven.pkg.jetbrains.space/public/p/compose/dev') }
+  }
+  // Force Kotlin plugin version from gradle.properties (kotlin.version)
+  resolutionStrategy.eachPlugin {
+    if (requested.id.id.startsWith('org.jetbrains.kotlin')) {
+      def ver = providers.gradleProperty('kotlin.version').orNull ?: System.getenv('KOTLIN_VERSION')
+      if (ver != null) {
+        useVersion(ver)
+      }
+    }
   }
 }
 
@@ -15,8 +29,12 @@ plugins {
 
 dependencyResolutionManagement {
   repositories {
+    maven { url = uri('../kotlin/build/repo') }
+    mavenLocal()
     mavenCentral()
     google()
+    maven { url = uri('https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev') }
+    maven { url = uri('https://maven.pkg.jetbrains.space/public/p/compose/dev') }
   }
 }
 
@@ -70,6 +88,7 @@ include ':redwood-lazylayout-testing'
 include ':redwood-lazylayout-uiview'
 include ':redwood-lazylayout-view'
 include ':redwood-lazylayout-widget'
+include ':redwood-lazylayout-gpui'
 include ':redwood-leak-detector'
 include ':redwood-leak-detector-zipline-test'
 include ':redwood-protocol'
@@ -104,6 +123,7 @@ include ':redwood-ui-basic-testing'
 include ':redwood-ui-basic-widget'
 include ':redwood-ui-basic-uiview'
 include ':redwood-ui-basic-view'
+include ':redwood-ui-basic-gpui'
 
 include ':redwood-ui-core-api'
 include ':redwood-ui-core-compose'
@@ -114,7 +134,9 @@ include ':redwood-ui-core-testing'
 include ':redwood-ui-core-uiview'
 include ':redwood-ui-core-view'
 include ':redwood-ui-core-widget'
+include ':redwood-layout-gpui'
 
+include ':redwood-host-gpui'
 include ':test-app:schema'
 include ':test-app:schema:compose'
 include ':test-app:schema:modifiers'
