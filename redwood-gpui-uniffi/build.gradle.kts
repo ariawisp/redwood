@@ -1,14 +1,16 @@
 import gobley.gradle.GobleyHost
+import org.gradle.api.GradleException
 
 plugins {
   kotlin("multiplatform")
+  id("org.jetbrains.kotlin.plugin.atomicfu")
   id("dev.gobley.cargo")
   id("dev.gobley.uniffi")
 }
 
 // Point Gobley at the Rust crate in the Zed workspace.
 cargo {
-  packageDirectory = layout.projectDirectory.dir("../zed/crates/redwood_gpui_bridge")
+  packageDirectory = layout.projectDirectory.dir("../crates/redwood_gpui_bridge")
 }
 
 uniffi {
@@ -29,4 +31,3 @@ kotlin {
     }
   }
 }
-

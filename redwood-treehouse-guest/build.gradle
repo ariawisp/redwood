@@ -1,13 +1,15 @@
 import static app.cash.redwood.buildsupport.TargetGroup.TreehouseGuest
 
+plugins {
+  id 'org.jetbrains.kotlin.plugin.serialization'
+  id 'app.cash.zipline'
+  id 'dev.gobley.wit-bindgen'
+}
+
 redwoodBuild {
   targets(TreehouseGuest)
   publishing()
 }
-
-apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
-apply plugin: 'app.cash.zipline'
-apply plugin: 'dev.gobley.wit-bindgen'
 
 kotlin {
   // Prepare wasm/WASI component pipeline. Leave disabled until WIT is added.

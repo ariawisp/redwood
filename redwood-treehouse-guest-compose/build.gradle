@@ -1,12 +1,14 @@
 import static app.cash.redwood.buildsupport.TargetGroup.TreehouseGuest
 
+plugins {
+  id 'org.jetbrains.kotlin.plugin.compose'
+  id 'dev.gobley.wit-bindgen'
+}
+
 redwoodBuild {
   targets(TreehouseGuest)
   publishing()
 }
-
-apply plugin: 'org.jetbrains.kotlin.plugin.compose'
-apply plugin: 'dev.gobley.wit-bindgen'
 
 kotlin {
   // Enable Wasm/WASI target for the host-agnostic guest harness.

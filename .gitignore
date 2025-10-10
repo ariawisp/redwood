@@ -25,3 +25,6 @@ redwood-layout-view/out/failures
 # DOM testing
 redwood-dom-testing/snapshots
 generated-redwood-snapshot-testing.js
+
+# Rust
+**/target/
