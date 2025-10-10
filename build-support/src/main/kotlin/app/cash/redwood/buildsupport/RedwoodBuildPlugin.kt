@@ -64,6 +64,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation.Companion.TEST_COMPILATION_NAME
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.mpp.Framework
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
@@ -320,6 +321,7 @@ private class RedwoodBuildExtensionImpl(private val project: Project) : RedwoodB
             modifiedGroup[JsTests, NodeJs].applyTo(this)
           }
           jvm()
+          wasmWasi()
         }
         // Needed for lint in downstream Android projects to analyze this dependency.
         project.plugins.apply("com.android.lint")
@@ -335,6 +337,7 @@ private class RedwoodBuildExtensionImpl(private val project: Project) : RedwoodB
             modifiedGroup[JsTests, NodeJs].applyTo(this)
           }
           jvm()
+          wasmWasi()
         }
       }
       Tooling -> {
@@ -350,6 +353,7 @@ private class RedwoodBuildExtensionImpl(private val project: Project) : RedwoodB
           iosTargets()
           js().browser()
           jvm()
+          wasmWasi()
         }
         // Needed for lint in downstream Android projects to analyze this dependency.
         project.plugins.apply("com.android.lint")
@@ -377,6 +381,7 @@ private class RedwoodBuildExtensionImpl(private val project: Project) : RedwoodB
           }
           iosTargets()
           jvm()
+          wasmWasi()
         }
       }
       TreehouseCommon -> {
@@ -388,12 +393,14 @@ private class RedwoodBuildExtensionImpl(private val project: Project) : RedwoodB
           iosTargets()
           js().nodejs()
           jvm()
+          wasmWasi()
         }
       }
       TreehouseGuest -> {
         project.applyKotlinMultiplatform {
           js().nodejs()
           jvm() // For easier testing.
+          wasmWasi()
         }
       }
       TreehouseHost -> {
@@ -404,6 +411,7 @@ private class RedwoodBuildExtensionImpl(private val project: Project) : RedwoodB
           }
           iosTargets()
           jvm()
+          wasmWasi()
         }
       }
     }
@@ -712,7 +720,26 @@ private fun Project.applyKotlinMultiplatform(block: KotlinMultiplatformExtension
   pluginManager.apply("org.jetbrains.kotlin.multiplatform")
   val kotlin = extensions.getByType(KotlinMultiplatformExtension::class.java)
   kotlin.block()
+  configureWasmImports(kotlin)
   kotlin.applyDefaultHierarchyTemplate()
+}
+
+private fun Project.configureWasmImports(kotlin: KotlinMultiplatformExtension) {
+  afterEvaluate {
+    val wasmImportsAttr = Attribute.of("org.jetbrains.kotlin.wasm.imports", String::class.java)
+    kotlin.targets.configureEach { target ->
+      if (target.platformType == KotlinPlatformType.wasm) {
+        val apiConfigName = target.apiElementsConfigurationName
+        configurations.matching { it.name == apiConfigName || it.name.startsWith("${apiConfigName}-") }.configureEach {
+          it.attributes.attribute(wasmImportsAttr, "preview1")
+        }
+        val runtimeConfigName = target.runtimeElementsConfigurationName
+        configurations.matching { it.name == runtimeConfigName || it.name.startsWith("${runtimeConfigName}-") }.configureEach {
+          it.attributes.attribute(wasmImportsAttr, "preview1")
+        }
+      }
+    }
+  }
 }
 
 private fun KotlinMultiplatformExtension.iosTargets() {
