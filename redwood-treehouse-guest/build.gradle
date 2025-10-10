@@ -7,8 +7,21 @@ redwoodBuild {
 
 apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
 apply plugin: 'app.cash.zipline'
+apply plugin: 'dev.gobley.wit-bindgen'
 
 kotlin {
+  // Prepare wasm/WASI component pipeline. Leave disabled until WIT is added.
+  // When ready, set enabled to true and point to your WIT inputs.
+  // wasmWasi {
+  //   component {
+  //     enabled.set(true)
+  //     // witDir.set(layout.projectDirectory.dir("src/wasmWasiMain/wit"))
+  //     // or: witFile.set(layout.projectDirectory.file("src/wasmWasiMain/wit/host.wit"))
+  //     // world.set("your:pkg/world")
+  //     // adapters.add("wasi_snapshot_preview2")
+  //   }
+  // }
+
   sourceSets {
     commonMain {
       dependencies {

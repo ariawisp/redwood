@@ -1,3 +1,0 @@
-headers = redwood_host.h
-package = redwood_host_gpui
-language = C

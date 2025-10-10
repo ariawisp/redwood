@@ -10,6 +10,7 @@ apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
 apply plugin: 'dev.drewhamilton.poko'
 
 kotlin {
+  macosArm64()
   sourceSets {
     commonMain {
       dependencies {

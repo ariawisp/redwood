@@ -9,6 +9,7 @@ apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
 
 kotlin {
+  macosArm64()
   sourceSets {
     commonMain {
       dependencies {

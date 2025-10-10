@@ -1,5 +1,8 @@
 pluginManagement {
   includeBuild('build-support/redwood-settings')
+  // WIT bindgen is consumed from mavenLocal via dev.gobley.wit-bindgen; no includeBuild needed
+  // Local dev: include Gobley Gradle plugins for UniFFI/Cargo integration
+  includeBuild('../gobley')
 
   repositories {
     maven { url = uri('../kotlin/build/repo') }
@@ -136,7 +139,9 @@ include ':redwood-ui-core-view'
 include ':redwood-ui-core-widget'
 include ':redwood-layout-gpui'
 
-include ':redwood-host-gpui'
+include ':redwood-gpui-uniffi'
+// Example module that consumes the dev.gobley.wit plugin
+include ':redwood-wit-example'
 include ':test-app:schema'
 include ':test-app:schema:compose'
 include ':test-app:schema:modifiers'

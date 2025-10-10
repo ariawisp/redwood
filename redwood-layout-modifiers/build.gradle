@@ -8,6 +8,7 @@ redwoodBuild {
 apply plugin: 'app.cash.redwood.generator.modifiers'
 
 kotlin {
+  macosArm64()
   sourceSets {
     commonMain {
       dependencies {

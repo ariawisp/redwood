@@ -6,8 +6,12 @@ redwoodBuild {
 }
 
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
+apply plugin: 'dev.gobley.wit-bindgen'
 
 kotlin {
+  // Enable Wasm/WASI target for the host-agnostic guest harness.
+  wasmWasi() // library target; no component bindings in this module
+
   sourceSets {
     commonMain {
       dependencies {
@@ -15,5 +19,6 @@ kotlin {
         api libs.androidx.compose.runtime
       }
     }
+    // No special dependencies needed for WASI; uses commonMain.
   }
 }

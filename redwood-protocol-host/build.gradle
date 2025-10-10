@@ -9,6 +9,7 @@ apply plugin: 'com.github.gmazzo.buildconfig'
 apply plugin: 'dev.drewhamilton.poko'
 
 kotlin {
+  macosArm64()
   sourceSets {
     commonMain {
       kotlin.srcDir(redwoodBuild.generateComposeHelpers(tasks, 'app.cash.redwood.protocol.host'))

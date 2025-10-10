@@ -7,6 +7,7 @@ redwoodBuild {
 apply plugin: 'app.cash.redwood.generator.protocol.host'
 
 kotlin {
+  macosArm64()
   // Ensure our codegen correctly works in explicit API mode.
   explicitApi()
 

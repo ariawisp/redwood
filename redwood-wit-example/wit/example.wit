@@ -1,0 +1,6 @@
+package dev:example;
+
+world example {
+  import host-log: func(msg: string);
+  export start: func();
+}

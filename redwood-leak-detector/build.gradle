@@ -6,6 +6,7 @@ redwoodBuild {
 }
 
 kotlin {
+  macosArm64()
   js {
     nodejs {
       testTask {

@@ -8,6 +8,11 @@ redwoodBuild {
 apply plugin: 'org.jetbrains.kotlin.multiplatform'
 apply plugin: 'app.cash.redwood.generator.modifiers'
 
+// Add macOS native target for host GPUI integration
+kotlin {
+  macosArm64()
+}
+
 redwoodSchema {
   source = projects.redwoodUiBasicSchema
   type = 'app.cash.redwood.ui.basic.RedwoodUiBasic'
