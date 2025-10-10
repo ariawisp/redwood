@@ -47,6 +47,8 @@ dependencyResolutionManagement {
   }
 }
 
+includeBuild('../compose-multiplatform-core')
+
 develocity {
   buildScan {
     termsOfUseUrl = 'https://gradle.com/help/legal-terms-of-use'

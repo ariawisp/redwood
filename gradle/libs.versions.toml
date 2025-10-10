@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.2.10"
+kotlin = "2.3.0-wit.1"
 kotlinx-coroutines = "1.10.2"
 kotlinx-serialization = "1.9.0"
 androidx-activity = "1.10.1"
@@ -67,7 +67,8 @@ google-material = { module = "com.google.android.material:material", version = "
 jetbrains-compose-gradlePlugin = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "jbCompose" }
 jetbrains-compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "jbCompose" }
 jetbrains-compose-material = { module = "org.jetbrains.compose.material:material", version.ref = "jbCompose" }
-jetbrains-compose-runtime-saveable = { module = "org.jetbrains.compose.runtime:runtime-saveable", version.ref = "jbCompose" }
+jetbrains-compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version = "9999.0.0-SNAPSHOT" }
+jetbrains-compose-runtime-saveable = { module = "org.jetbrains.compose.runtime:runtime-saveable", version = "9999.0.0-SNAPSHOT" }
 jetbrains-compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "jbCompose" }
 jetbrains-compose-ui-tooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "jbCompose" }
 jetbrains-compose-ui-tooling-preview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "jbCompose" }

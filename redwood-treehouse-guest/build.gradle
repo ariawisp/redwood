@@ -27,7 +27,7 @@ kotlin {
   sourceSets {
     commonMain {
       dependencies {
-        api libs.androidx.compose.runtime
+        api libs.jetbrains.compose.runtime
         api libs.kotlinx.coroutines.core
         api libs.okio
         api libs.zipline

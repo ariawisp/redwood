@@ -8,6 +8,8 @@ buildscript {
     classpath libs.buildConfigPlugin
   }
   repositories {
+    maven { url = uri('../kotlin/build/repo') }
+    mavenLocal()
     mavenCentral()
     gradlePluginPortal()
     google()
@@ -16,6 +18,8 @@ buildscript {
 
 allprojects {
   repositories {
+    maven { url = uri('../kotlin/build/repo') }
+    mavenLocal()
     mavenCentral()
     google()
   }

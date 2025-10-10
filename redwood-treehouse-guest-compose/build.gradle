@@ -18,7 +18,7 @@ kotlin {
     commonMain {
       dependencies {
         api projects.redwoodProtocolGuest
-        api libs.androidx.compose.runtime
+        api libs.jetbrains.compose.runtime
       }
     }
     // No special dependencies needed for WASI; uses commonMain.

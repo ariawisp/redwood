@@ -4,22 +4,22 @@ interface protocol {
   /// Logical node identifier.
   type node-id = u64;
 
-  /// Index into a frame's string table.
-  type string-id = u32;
+  /// Schema-qualified widget identifier.
+  type widget-tag = u32;
 
-  /// Minimal widget kinds supported by the preview bridge.
-  enum redwood-widget {
-    text,
-    button,
-    image,
-    row,
-    column,
-  }
+  /// Identifies a property on a widget.
+  type property-tag = u32;
+
+  /// Identifies a child slot on a widget.
+  type children-tag = u32;
+
+  /// Identifies a modifier applied to a widget. May be negative for reserved tags.
+  type modifier-tag = s32;
 
   /// Payload for create widget operations.
   record change-create {
     id: node-id,
-    widget: redwood-widget,
+    widget: widget-tag,
   }
 
   /// Payload for destroy widget operations.
@@ -27,58 +27,65 @@ interface protocol {
     id: node-id,
   }
 
-  /// Payload for append-child widget operations.
-  record change-append-child {
+  /// Payload for adding a child to a slot at an index.
+  record change-add-child {
     parent: node-id,
+    slot: children-tag,
     child: node-id,
-  }
-
-  /// Payload for insert-child widget operations.
-  record change-insert-child {
-    parent: node-id,
     index: u32,
-    child: node-id,
   }
 
-  /// Payload for remove-child widget operations.
+  /// Payload for moving a range of children.
+  record change-move-child {
+    parent: node-id,
+    slot: children-tag,
+    from: u32,
+    to: u32,
+    count: u32,
+  }
+
+  /// Payload for removing a child range.
   record change-remove-child {
     parent: node-id,
-    child: node-id,
+    slot: children-tag,
+    index: u32,
+    count: u32,
+    detach: bool,
   }
 
-  /// Payload for text property updates.
-  record change-set-text {
+  /// Payload for property updates, encoded as JSON.
+  record change-set-property {
     id: node-id,
-    text: string-id,
+    widget: widget-tag,
+    property: property-tag,
+    value-json: string,
   }
 
-  /// Payload for enabled property updates.
-  record change-set-enabled {
-    id: node-id,
-    enabled: bool,
+  /// A modifier element applied to a widget. `value-json` is omitted when default/null.
+  record modifier-element {
+    tag: modifier-tag,
+    value-json: option<string>,
   }
 
-  /// Payload for image-url property updates.
-  record change-set-image-url {
+  /// Payload for modifier updates.
+  record change-set-modifiers {
     id: node-id,
-    url: string-id,
+    elements: list<modifier-element>,
   }
 
   /// A single UI mutation.
   variant redwood-change {
     create(change-create),
     destroy(change-destroy),
-    append-child(change-append-child),
-    insert-child(change-insert-child),
+    add-child(change-add-child),
+    move-child(change-move-child),
     remove-child(change-remove-child),
-    set-text(change-set-text),
-    set-enabled(change-set-enabled),
-    set-image-url(change-set-image-url),
+    set-property(change-set-property),
+    set-modifiers(change-set-modifiers),
   }
 
-  /// A batch of UI mutations plus an interned string table.
+  /// A batch of UI mutations.
   record redwood-frame {
-    strings: list<string>,
     changes: list<redwood-change>,
   }
 }

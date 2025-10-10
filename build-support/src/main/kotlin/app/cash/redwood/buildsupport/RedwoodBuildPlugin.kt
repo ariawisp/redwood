@@ -267,9 +267,9 @@ class RedwoodBuildPlugin : Plugin<Project> {
       // prevent linking against newer JDK APIs (the Android targets link against the android.jar).
       kotlin.targets.withType(KotlinJvmTarget::class.java) { target ->
         target.compilations.configureEach {
-          it.kotlinOptions.freeCompilerArgs += listOf(
-            "-Xjdk-release=$javaVersion",
-          )
+          it.compileTaskProvider.configure { compileTask ->
+            compileTask.compilerOptions.freeCompilerArgs.add("-Xjdk-release=$javaVersion")
+          }
         }
       }
 

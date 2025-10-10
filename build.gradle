@@ -12,6 +12,8 @@ buildscript {
     classpath 'app.cash.redwood:redwood-gradle-plugin'
   }
   repositories {
+    maven { url = uri('../kotlin/build/repo') }
+    mavenLocal()
     mavenCentral()
     google()
     gradlePluginPortal()
