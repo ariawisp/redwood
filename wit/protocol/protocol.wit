@@ -16,6 +16,9 @@ interface protocol {
   /// Identifies a modifier applied to a widget. May be negative for reserved tags.
   type modifier-tag = s32;
 
+  /// Identifies an event emitted by a widget.
+  type event-tag = u32;
+
   /// Payload for create widget operations.
   record change-create {
     id: node-id,
@@ -87,5 +90,13 @@ interface protocol {
   /// A batch of UI mutations.
   record redwood-frame {
     changes: list<redwood-change>,
+  }
+
+  /// A runtime event emitted by the host for a widget instance.
+  record redwood-event {
+    id: node-id,
+    widget: widget-tag,
+    event: event-tag,
+    args-json: list<string>,
   }
 }

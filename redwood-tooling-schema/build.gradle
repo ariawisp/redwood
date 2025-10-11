@@ -6,6 +6,16 @@ redwoodBuild {
   cliApplication('redwood-schema', 'app.cash.redwood.tooling.schema.Main')
 }
 
+sourceSets {
+  main {
+    kotlin {
+      srcDir('zed-core/src/main/kotlin')
+      srcDir('zed-layout/src/main/kotlin')
+      srcDir('zed-components/src/main/kotlin')
+    }
+  }
+}
+
 apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
 apply plugin: 'java-test-fixtures'
 

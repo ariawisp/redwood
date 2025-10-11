@@ -19,3 +19,108 @@ dependencies {
   testImplementation libs.junit
   testImplementation libs.assertk
 }
+
+def schemaClasspathProvider = {
+  projects.redwoodToolingSchema.sourceSets.main.runtimeClasspath
+}
+
+def generatorMainClasspath = sourceSets.main.runtimeClasspath
+
+def generatedRoot = layout.projectDirectory.dir("../generated/zed")
+
+tasks.register('generateZedCoreModifiers', JavaExec) {
+  group = "codegen"
+  description = "Generate modifier interfaces for the Zed core schema."
+  classpath = generatorMainClasspath
+  mainClass = 'app.cash.redwood.tooling.codegen.Main'
+  dependsOn projects.redwoodToolingSchema.tasks.named('classes')
+  doFirst {
+    args '--modifier'
+    args '--out', generatedRoot.dir('core/modifiers').asFile.absolutePath
+    args '--class-path', schemaClasspathProvider().asPath
+    args 'dev.zed.redwood.schema.core.ZedCore'
+  }
+}
+
+tasks.register('generateZedComponentsCompose', JavaExec) {
+  group = "codegen"
+  description = "Generate Compose bindings for the Zed component schema."
+  classpath = generatorMainClasspath
+  mainClass = 'app.cash.redwood.tooling.codegen.Main'
+  dependsOn projects.redwoodToolingSchema.tasks.named('classes')
+  doFirst {
+    args '--compose'
+    args '--out', generatedRoot.dir('components/compose').asFile.absolutePath
+    args '--class-path', schemaClasspathProvider().asPath
+    args 'dev.zed.redwood.schema.components.ZedComponents'
+  }
+}
+
+tasks.register('generateZedComponentsWidget', JavaExec) {
+  group = "codegen"
+  description = "Generate widget bindings for the Zed component schema."
+  classpath = generatorMainClasspath
+  mainClass = 'app.cash.redwood.tooling.codegen.Main'
+  dependsOn projects.redwoodToolingSchema.tasks.named('classes')
+  doFirst {
+    args '--widget'
+    args '--out', generatedRoot.dir('components/widget').asFile.absolutePath
+    args '--class-path', schemaClasspathProvider().asPath
+    args 'dev.zed.redwood.schema.components.ZedComponents'
+  }
+}
+
+tasks.register('generateZedComponentsWidgetComposeUi', JavaExec) {
+  group = "codegen"
+  description = "Generate Compose UI host bindings for the Zed component schema."
+  classpath = generatorMainClasspath
+  mainClass = 'app.cash.redwood.tooling.codegen.Main'
+  dependsOn projects.redwoodToolingSchema.tasks.named('classes')
+  doFirst {
+    args '--widget-compose-ui'
+    args '--out', generatedRoot.dir('components/widget-composeui').asFile.absolutePath
+    args '--class-path', schemaClasspathProvider().asPath
+    args 'dev.zed.redwood.schema.components.ZedComponents'
+  }
+}
+
+tasks.register('generateZedLayoutWidget', JavaExec) {
+  group = "codegen"
+  description = "Generate widget bindings for the Zed layout schema."
+  classpath = generatorMainClasspath
+  mainClass = 'app.cash.redwood.tooling.codegen.Main'
+  dependsOn projects.redwoodToolingSchema.tasks.named('classes')
+  doFirst {
+    args '--widget'
+    args '--out', generatedRoot.dir('layout/widget').asFile.absolutePath
+    args '--class-path', schemaClasspathProvider().asPath
+    args 'dev.zed.redwood.schema.layout.ZedLayout'
+  }
+}
+
+tasks.register('generateZedLayoutCompose', JavaExec) {
+  group = "codegen"
+  description = "Generate Compose bindings for the Zed layout schema."
+  classpath = generatorMainClasspath
+  mainClass = 'app.cash.redwood.tooling.codegen.Main'
+  dependsOn projects.redwoodToolingSchema.tasks.named('classes')
+  doFirst {
+    args '--compose'
+    args '--out', generatedRoot.dir('layout/compose').asFile.absolutePath
+    args '--class-path', schemaClasspathProvider().asPath
+    args 'dev.zed.redwood.schema.layout.ZedLayout'
+  }
+}
+
+tasks.register('generateAllZedSchemas') {
+  group = "codegen"
+  description = "Materialize all generated sources for the Zed Redwood schemas."
+  dependsOn(
+    'generateZedCoreModifiers',
+    'generateZedComponentsCompose',
+    'generateZedComponentsWidget',
+    'generateZedComponentsWidgetComposeUi',
+    'generateZedLayoutWidget',
+    'generateZedLayoutCompose',
+  )
+}
