@@ -15,6 +15,8 @@
  */
 package com.example.redwood.emojisearch.treehouse
 
+import app.cash.redwood.treehouse.hotreload.bindTreehouseHotReload
+import app.cash.redwood.treehouse.hotreload.defaultTreehouseHotReloadClient
 import app.cash.zipline.Zipline
 
 private val zipline by lazy { Zipline.get(emojiSearchSerializersModule) }
@@ -30,4 +32,9 @@ fun preparePresenters() {
     name = "EmojiSearchPresenter",
     instance = RealEmojiSearchPresenter(hostApi, zipline.json),
   )
+
+  val presenter = zipline.take<EmojiSearchPresenter>("EmojiSearchPresenter")
+  val treehouseUi = presenter.launch()
+  val hotReloadClient = defaultTreehouseHotReloadClient(treehouseUi)
+  zipline.bindTreehouseHotReload(hotReloadClient)
 }

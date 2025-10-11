@@ -15,6 +15,7 @@
  */
 package app.cash.redwood.treehouse
 
+import app.cash.redwood.treehouse.hotreload.TreehouseHotReloadConfig
 import app.cash.zipline.Zipline
 import app.cash.zipline.loader.DefaultFreshnessCheckerNotFresh
 import app.cash.zipline.loader.FreshnessChecker
@@ -144,6 +145,9 @@ public abstract class TreehouseApp<A : AppService> : AutoCloseable {
      */
     public open val loadCodeFromNetworkOnly: Boolean
       get() = false
+
+    public open val hotReloadConfig: TreehouseHotReloadConfig?
+      get() = null
 
     /**
      * Make services available to guest application on [zipline], typically by making one or more

@@ -22,6 +22,7 @@ kotlin {
         api projects.redwoodProtocol
         api projects.redwoodProtocolHost
         api projects.redwoodTreehouse
+        api projects.redwoodTreehouseHotreloadHost
         api projects.redwoodUiCoreApi
       }
     }

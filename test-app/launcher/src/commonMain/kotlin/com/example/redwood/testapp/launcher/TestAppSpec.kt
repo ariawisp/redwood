@@ -16,6 +16,7 @@
 package com.example.redwood.testapp.launcher
 
 import app.cash.redwood.treehouse.TreehouseApp
+import app.cash.redwood.treehouse.hotreload.TreehouseHotReloadConfig
 import app.cash.zipline.Zipline
 import app.cash.zipline.ZiplineManifest
 import app.cash.zipline.loader.FreshnessChecker
@@ -26,12 +27,16 @@ import kotlinx.coroutines.flow.Flow
 class TestAppSpec(
   override val manifestUrl: Flow<String>,
   private val hostApi: HostApi,
+  private val enableHotReload: Boolean = true,
 ) : TreehouseApp.Spec<TestAppPresenter>() {
   override val name get() = "test-app"
 
   override val freshnessChecker = object : FreshnessChecker {
     override fun isFresh(manifest: ZiplineManifest, freshAtEpochMs: Long) = true
   }
+
+  override val hotReloadConfig: TreehouseHotReloadConfig?
+    get() = if (enableHotReload) TreehouseHotReloadConfig(enabled = true) else null
 
   override suspend fun bindServices(
     treehouseApp: TreehouseApp<TestAppPresenter>,

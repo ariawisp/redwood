@@ -16,6 +16,10 @@
 package app.cash.redwood.treehouse
 
 import app.cash.redwood.leaks.LeakDetector
+import app.cash.redwood.treehouse.StateSnapshot
+import app.cash.redwood.treehouse.hotreload.TreehouseHotReloadConfig
+import app.cash.redwood.treehouse.hotreload.TreehouseHotReloadManager
+import app.cash.redwood.treehouse.hotreload.TreehouseHotReloadStateStore
 import app.cash.redwood.protocol.host.HostProtocol
 import app.cash.zipline.EventListener as ZiplineEventListener
 import app.cash.zipline.Zipline
@@ -47,11 +51,38 @@ internal class RealTreehouseApp<A : AppService> private constructor(
   /** Non-null until this app is closed. This property is confined to [TreehouseDispatchers.ui]. */
   private var eventListenerFactory: EventListener.Factory? = eventListenerFactory
 
+  private val hotReloadConfig: TreehouseHotReloadConfig? = spec.hotReloadConfig
+
+  private val hotReloadManager: TreehouseHotReloadManager? by lazy {
+    val config = hotReloadConfig ?: return@lazy null
+    if (!config.enabled) return@lazy null
+
+    TreehouseHotReloadManager(
+      stateStore = object : TreehouseHotReloadStateStore {
+        override suspend fun save(key: String, snapshot: StateSnapshot) {
+          factory.stateStore.put(key, snapshot)
+        }
+
+        override suspend fun read(key: String): StateSnapshot? {
+          return factory.stateStore.get(key)
+        }
+      },
+      bridgeProvider = {
+        codeHost.zipline.value?.let { zipline ->
+          TreehouseHotReloadManager.bridgeFromZipline(zipline)
+        }
+      },
+      stateTracker = config.stateTracker,
+    )
+  }
+
   private val codeHost = object : CodeHost<A>(
     dispatchers = dispatchers,
     appScope = appScope,
     stateStore = factory.stateStore,
     eventListenerFactory = eventListenerFactory,
+    hotReloadManagerProvider = { currentHotReloadManager() },
+    captureRequestFactory = hotReloadConfig?.captureRequestFactory,
   ) {
     override fun codeUpdatesFlow(
       eventListenerFactory: EventListener.Factory,
@@ -177,11 +208,16 @@ internal class RealTreehouseApp<A : AppService> private constructor(
 
     closed = true
     spec = null
+    hotReloadManager?.clearCachedFrame()
     codeHost.close()
     eventListenerFactory?.close()
     eventListenerFactory = null
     stop()
     dispatchers.close()
+  }
+
+  private fun currentHotReloadManager(): TreehouseHotReloadManager? {
+    return hotReloadManager
   }
 
   class Factory internal constructor(

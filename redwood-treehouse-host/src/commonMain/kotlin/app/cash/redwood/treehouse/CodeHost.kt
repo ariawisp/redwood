@@ -15,6 +15,10 @@
  */
 package app.cash.redwood.treehouse
 
+import app.cash.redwood.treehouse.hotreload.TreehouseHotReloadCaptureRequest
+import app.cash.redwood.treehouse.hotreload.TreehouseHotReloadManager
+import app.cash.redwood.treehouse.hotreload.TreehouseHotReloadTrigger
+import app.cash.redwood.treehouse.ZiplineCodeSession
 import app.cash.zipline.Zipline
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -54,6 +58,8 @@ internal abstract class CodeHost<A : AppService>(
   private val appScope: CoroutineScope,
   eventListenerFactory: EventListener.Factory,
   val stateStore: StateStore,
+  private val hotReloadManagerProvider: (() -> TreehouseHotReloadManager?)? = null,
+  private val captureRequestFactory: (() -> TreehouseHotReloadCaptureRequest)? = null,
 ) : Closeable {
   /** Contents that this app is currently responsible for. */
   private val listeners = mutableListOf<Listener<A>>()
@@ -171,8 +177,13 @@ internal abstract class CodeHost<A : AppService>(
     next.scope.launch(dispatchers.ui) {
       // Clean up the previous session.
       val previous = state
+
+      val captureJob = launchCaptureJob(previous.codeSession)
+
       previous.codeSession?.removeListener(codeSessionListener)
       previous.codeSession?.stop()
+
+      captureJob?.join()
 
       // If the codeUpdatesScope is null, we're stopped. Discard the newly-loaded code.
       val codeUpdatesScope = previous.codeUpdatesScope
@@ -186,9 +197,36 @@ internal abstract class CodeHost<A : AppService>(
       mutableZipline.value = (next as? ZiplineCodeSession)?.zipline
       next.addListener(codeSessionListener)
       next.start()
+      launchRestoreJob(next)
 
       for (listener in listeners) {
         listener.codeSessionChanged(next)
+      }
+    }
+  }
+
+  private fun launchCaptureJob(previousSession: CodeSession<A>?): kotlinx.coroutines.Job? {
+    val manager = hotReloadManagerProvider?.invoke() ?: return null
+    val ziplineSession = previousSession as? ZiplineCodeSession<*> ?: return null
+    val request = captureRequestFactory?.invoke() ?: TreehouseHotReloadCaptureRequest(
+      trigger = TreehouseHotReloadTrigger.SourceUpdate,
+    )
+    return ziplineSession.scope.launch(dispatchers.zipline) {
+      runCatching {
+        manager.captureFrame(request)
+      }.onFailure {
+        manager.clearCachedFrame()
+      }
+    }
+  }
+
+  private fun launchRestoreJob(nextSession: CodeSession<A>) {
+    val manager = hotReloadManagerProvider?.invoke() ?: return
+    nextSession.scope.launch(dispatchers.zipline) {
+      runCatching {
+        manager.restoreFrame()
+      }.onFailure {
+        manager.clearCachedFrame()
       }
     }
   }
