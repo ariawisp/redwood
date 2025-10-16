@@ -102,3 +102,6 @@ googleJavaFormat = "com.google.googlejavaformat:google-java-format:1.29.0"
 poko-gradlePlugin = "dev.drewhamilton.poko:poko-gradle-plugin:0.19.3"
 
 lint-core = { module = "com.android.tools.lint:lint", version.ref = "lint" }
+
+[plugins]
+kotlin-atomicfu = { id = "org.jetbrains.kotlin.plugin.atomicfu", version.ref = "kotlin" }

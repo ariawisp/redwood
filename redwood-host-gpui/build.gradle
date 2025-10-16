@@ -1,0 +1,35 @@
+import gobley.gradle.rust.targets.RustPosixTarget
+
+plugins {
+  id 'org.jetbrains.kotlin.multiplatform'
+  alias(libs.plugins.kotlin.atomicfu)
+  id 'dev.gobley.cargo' version '0.3.7'
+  id 'dev.gobley.uniffi' version '0.3.7'
+}
+
+kotlin {
+  applyDefaultHierarchyTemplate()
+
+  macosArm64()
+  macosX64()
+
+  sourceSets {
+    commonTest {
+      dependencies {
+        implementation libs.kotlin.test
+      }
+    }
+  }
+}
+
+cargo {
+  packageDirectory = rootProject.layout.projectDirectory.dir("../gpui-standalone/gpui-main/crates/gpui-uniffi")
+}
+
+uniffi {
+  generateFromLibrary {
+    namespace = "gpui_uniffi"
+    packageName = "app.cash.redwood.host.gpui"
+    build = RustPosixTarget.MacOSArm64
+  }
+}

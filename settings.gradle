@@ -114,6 +114,7 @@ include ':redwood-ui-core-testing'
 include ':redwood-ui-core-uiview'
 include ':redwood-ui-core-view'
 include ':redwood-ui-core-widget'
+include ':redwood-host-gpui'
 
 include ':test-app:schema'
 include ':test-app:schema:compose'
