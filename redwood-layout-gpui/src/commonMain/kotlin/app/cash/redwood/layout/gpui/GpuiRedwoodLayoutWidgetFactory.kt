@@ -1,3 +1,5 @@
+@file:OptIn(RedwoodYogaApi::class)
+
 package app.cash.redwood.layout.gpui
 
 import app.cash.redwood.Modifier
@@ -11,6 +13,10 @@ import app.cash.redwood.host.gpui.ScrollListener
 import app.cash.redwood.host.gpui.scrollListener
 import app.cash.redwood.host.gpui.toEdgeInsets
 import app.cash.redwood.host.gpui.toGpui
+import app.cash.redwood.host.gpui.toAlignItems
+import app.cash.redwood.host.gpui.toAlignSelf
+import app.cash.redwood.host.gpui.toBoxJustifyContent
+import app.cash.redwood.host.gpui.toJustifyContent
 import app.cash.redwood.layout.api.Constraint
 import app.cash.redwood.layout.api.CrossAxisAlignment
 import app.cash.redwood.layout.api.MainAxisAlignment
@@ -24,6 +30,11 @@ import app.cash.redwood.ui.Dp
 import app.cash.redwood.ui.Margin
 import app.cash.redwood.ui.Px
 import app.cash.redwood.widget.Widget
+import app.cash.redwood.yoga.AlignSelf
+import app.cash.redwood.yoga.FlexDirection
+import app.cash.redwood.yoga.JustifyContent
+import app.cash.redwood.yoga.Node
+import app.cash.redwood.yoga.RedwoodYogaApi
 
 public class GpuiRedwoodLayoutWidgetFactory(
   private val environment: GpuiEnvironment,
@@ -40,14 +51,24 @@ public class GpuiRedwoodLayoutWidgetFactory(
 private abstract class GpuiFlexContainer(
   protected val environment: GpuiEnvironment,
   private val node: RedwoodFlexNode,
+  private val direction: FlexDirection,
 ) : Widget<GpuiNode> {
   private var widthConstraint: Constraint = Constraint.Wrap
   private var heightConstraint: Constraint = Constraint.Wrap
   private var scrollListener: ScrollListener? = null
 
-  final override val value: GpuiNode = GpuiNode(node.rawNode())
+  private val layoutNode = Node().apply {
+    flexDirection = direction
+  }
 
-  protected val childrenContainer = GpuiChildren(node.children())
+  final override val value: GpuiNode = GpuiNode(
+    handle = node.rawNode(),
+    layoutController = environment.layoutController,
+    layoutNode = layoutNode,
+    measureSelf = false,
+  )
+
+  protected val childrenContainer = GpuiChildren(environment, node.children(), value)
 
   open override val allChildren: List<Widget.Children<GpuiNode>> = listOf(childrenContainer)
 
@@ -74,6 +95,8 @@ private abstract class GpuiFlexContainer(
 
   open fun margin(margin: Margin) {
     node.setMargin(margin.toEdgeInsets(environment.density))
+    applyLayoutMargin(margin)
+    value.markNeedsLayout()
   }
 
   open fun overflow(overflow: Overflow) {
@@ -87,20 +110,48 @@ private abstract class GpuiFlexContainer(
 
   protected fun setMainAxisAlignment(alignment: MainAxisAlignment) {
     node.setMainAxisAlignment(alignment.toGpui())
+    layoutNode.justifyContent = alignment.toJustifyContent()
+    value.markNeedsLayout()
   }
 
   protected fun setCrossAxisAlignment(alignment: CrossAxisAlignment) {
     node.setCrossAxisAlignment(alignment.toGpui())
+    layoutNode.alignItems = alignment.toAlignItems()
+    value.markNeedsLayout()
   }
 
   private fun applyConstraints() {
     node.setConstraints(widthConstraint.toGpui(), heightConstraint.toGpui())
+    updateLayoutSizing()
+    value.markNeedsLayout()
+  }
+
+  private fun updateLayoutSizing() {
+    when (direction) {
+      FlexDirection.Row -> {
+        layoutNode.flexGrow = if (widthConstraint == Constraint.Fill) 1f else 0f
+        layoutNode.alignSelf = if (heightConstraint == Constraint.Fill) AlignSelf.Stretch else AlignSelf.Auto
+      }
+      FlexDirection.Column -> {
+        layoutNode.flexGrow = if (heightConstraint == Constraint.Fill) 1f else 0f
+        layoutNode.alignSelf = if (widthConstraint == Constraint.Fill) AlignSelf.Stretch else AlignSelf.Auto
+      }
+    }
+  }
+
+  private fun applyLayoutMargin(margin: Margin) {
+    val edgeInsets = margin.toEdgeInsets(environment.density)
+    layoutNode.marginStart = edgeInsets.start
+    layoutNode.marginEnd = edgeInsets.end
+    layoutNode.marginTop = edgeInsets.top
+    layoutNode.marginBottom = edgeInsets.bottom
   }
 }
 
 private class GpuiRow(
   environment: GpuiEnvironment,
-) : GpuiFlexContainer(environment, environment.surface.createRow()), Row<GpuiNode> {
+) : GpuiFlexContainer(environment, environment.surface.createRow(), FlexDirection.Row),
+  Row<GpuiNode> {
   override val children: Widget.Children<GpuiNode>
     get() = childrenContainer
 
@@ -128,7 +179,8 @@ private class GpuiRow(
 
 private class GpuiColumn(
   environment: GpuiEnvironment,
-) : GpuiFlexContainer(environment, environment.surface.createColumn()), Column<GpuiNode> {
+) : GpuiFlexContainer(environment, environment.surface.createColumn(), FlexDirection.Column),
+  Column<GpuiNode> {
   override val children: Widget.Children<GpuiNode>
     get() = childrenContainer
 
@@ -158,7 +210,9 @@ private class GpuiBox(
   private val environment: GpuiEnvironment,
 ) : Box<GpuiNode> {
   private val node = environment.surface.createBox()
-  private val _children = GpuiChildren(node.children())
+  private val layoutNode = Node().apply {
+    flexDirection = FlexDirection.Column
+  }
 
   private var widthConstraint: Constraint = Constraint.Wrap
   private var heightConstraint: Constraint = Constraint.Wrap
@@ -166,7 +220,14 @@ private class GpuiBox(
   private var matchParentHeight: Boolean = false
   private var margin: Margin = Margin.Zero
 
-  override val value: GpuiNode = GpuiNode(node.rawNode())
+  override val value: GpuiNode = GpuiNode(
+    handle = node.rawNode(),
+    layoutController = environment.layoutController,
+    layoutNode = layoutNode,
+    measureSelf = false,
+  )
+
+  private val _children = GpuiChildren(environment, node.children(), value)
 
   init {
     applyConstraints()
@@ -197,12 +258,14 @@ private class GpuiBox(
   override fun horizontalAlignment(horizontalAlignment: CrossAxisAlignment) {
     matchParentWidth = horizontalAlignment == CrossAxisAlignment.Stretch
     node.setHorizontalAlignment(horizontalAlignment.toGpui())
+    layoutNode.alignItems = horizontalAlignment.toAlignItems()
     applyConstraints()
   }
 
   override fun verticalAlignment(verticalAlignment: CrossAxisAlignment) {
     matchParentHeight = verticalAlignment == CrossAxisAlignment.Stretch
     node.setVerticalAlignment(verticalAlignment.toGpui())
+    layoutNode.justifyContent = verticalAlignment.toBoxJustifyContent()
     applyConstraints()
   }
 
@@ -210,6 +273,11 @@ private class GpuiBox(
     if (this.margin != margin) {
       this.margin = margin
       node.setMargin(margin.toEdgeInsets(environment.density))
+      val edgeInsets = margin.toEdgeInsets(environment.density)
+      layoutNode.marginStart = edgeInsets.start
+      layoutNode.marginEnd = edgeInsets.end
+      layoutNode.marginTop = edgeInsets.top
+      layoutNode.marginBottom = edgeInsets.bottom
       value.markNeedsLayout()
     }
   }
@@ -224,6 +292,10 @@ private class GpuiBox(
       else -> Constraint.Wrap
     }
     node.setConstraints(width.toGpui(), height.toGpui())
+
+    layoutNode.alignSelf = if (width == Constraint.Fill) AlignSelf.Stretch else AlignSelf.Auto
+    layoutNode.flexGrow = if (height == Constraint.Fill) 1f else 0f
+
     value.markNeedsLayout()
   }
 }
@@ -233,7 +305,10 @@ private class GpuiSpacer(
 ) : Spacer<GpuiNode> {
   private val node = environment.surface.createSpacer()
 
-  override val value: GpuiNode = GpuiNode(node.rawNode())
+  override val value: GpuiNode = GpuiNode(
+    handle = node.rawNode(),
+    layoutController = environment.layoutController,
+  )
 
   override val allChildren: List<Widget.Children<GpuiNode>> = emptyList()
 

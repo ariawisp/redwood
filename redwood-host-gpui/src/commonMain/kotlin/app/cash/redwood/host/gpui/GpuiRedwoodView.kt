@@ -13,13 +13,21 @@ import app.cash.redwood.widget.SavedStateRegistry
 import app.cash.redwood.widget.Widget
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import app.cash.redwood.yoga.FlexDirection
+import app.cash.redwood.yoga.Node
 
 public class GpuiRedwoodView internal constructor(
   public val window: GpuiWindow,
   public val environment: GpuiEnvironment,
 ) : RedwoodView<GpuiNode> {
-  private val rootNode = GpuiNode(RedwoodNodeHandle.placeholder())
-  private val rootChildren = environment.surface.rootChildren()
+  private val rootNode = GpuiNode(
+    handle = RedwoodNodeHandle.placeholder(),
+    layoutController = environment.layoutController,
+    layoutNode = Node().apply { flexDirection = FlexDirection.Column },
+    shouldApplyLayoutFrame = false,
+    measureSelf = false,
+  )
+  private val rootChildren = environment.surface.rootChildren(environment, rootNode)
 
   private val mutableUiConfiguration = MutableStateFlow(
     UiConfiguration(
@@ -31,6 +39,11 @@ public class GpuiRedwoodView internal constructor(
       layoutDirection = LayoutDirection.Ltr,
     ),
   )
+
+  init {
+    environment.surface.layoutController = environment.layoutController
+    environment.layoutController.attachRoot(rootNode)
+  }
 
   override val onBackPressedDispatcher: OnBackPressedDispatcher =
     object : OnBackPressedDispatcher {
@@ -68,6 +81,7 @@ public class GpuiRedwoodView internal constructor(
       viewportSize = Size(width, height),
       density = density.rawDensity,
     )
+    environment.layoutController.updateViewport(size)
   }
 
   public fun requestLayout() {
@@ -107,7 +121,10 @@ public fun GpuiApp.createRedwoodView(
   )
 
   val surface = window.createSurface()
-  val view = GpuiRedwoodView(window, GpuiEnvironment(surface, density))
+  val layoutController = GpuiLayoutController()
+  surface.layoutController = layoutController
+  val environment = GpuiEnvironment(surface, density, layoutController)
+  val view = GpuiRedwoodView(window, environment)
   redwoodView = view
   pendingViewport?.let { view.updateViewport(it) }
   return view

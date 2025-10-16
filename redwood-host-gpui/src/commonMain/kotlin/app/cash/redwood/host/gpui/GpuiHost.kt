@@ -112,12 +112,19 @@ public class GpuiWindow internal constructor(
 public class GpuiSurface internal constructor(
   internal val handle: RedwoodSurfaceHandle,
 ) {
-  public fun rootChildren(): GpuiChildren {
-    return GpuiChildren(handle.rootChildren())
+  internal var layoutController: GpuiLayoutController? = null
+
+  public fun rootChildren(environment: GpuiEnvironment, parentNode: GpuiNode): GpuiChildren {
+    return GpuiChildren(environment, handle.rootChildren(), parentNode)
   }
 
   public fun requestLayout() {
-    handle.requestLayout()
+    val controller = layoutController
+    if (controller != null) {
+      controller.requestLayout()
+    } else {
+      handle.requestLayout()
+    }
   }
 
   public fun dispose() {

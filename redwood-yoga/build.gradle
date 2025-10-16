@@ -1,7 +1,9 @@
 import static app.cash.redwood.buildsupport.TargetGroup.ToolkitAllWithoutAndroid
+import static app.cash.redwood.buildsupport.TargetGroup.ToolkitDesktopGpui
 
 redwoodBuild {
   targets(ToolkitAllWithoutAndroid)
+  targets(ToolkitDesktopGpui)
   publishing()
 }
 

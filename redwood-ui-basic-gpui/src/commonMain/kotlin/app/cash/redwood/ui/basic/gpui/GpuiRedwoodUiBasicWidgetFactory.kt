@@ -39,7 +39,10 @@ private class GpuiText(
 ) : Text<GpuiNode> {
   private val node = environment.surface.createText()
 
-  override val value: GpuiNode = GpuiNode(node.rawNode())
+  override val value: GpuiNode = GpuiNode(
+    handle = node.rawNode(),
+    layoutController = environment.layoutController,
+  )
 
   override val allChildren: List<Widget.Children<GpuiNode>> = emptyList()
 
@@ -62,7 +65,10 @@ private class GpuiButton(
 
   private var clickHandler: ButtonClickHandler? = null
 
-  override val value: GpuiNode = GpuiNode(node.rawNode())
+  override val value: GpuiNode = GpuiNode(
+    handle = node.rawNode(),
+    layoutController = environment.layoutController,
+  )
 
   override val allChildren: List<Widget.Children<GpuiNode>> = emptyList()
 
@@ -101,7 +107,10 @@ private class GpuiImage(
 
   private var clickHandler: ImageClickHandler? = null
 
-  override val value: GpuiNode = GpuiNode(node.rawNode())
+  override val value: GpuiNode = GpuiNode(
+    handle = node.rawNode(),
+    layoutController = environment.layoutController,
+  )
 
   override val allChildren: List<Widget.Children<GpuiNode>> = emptyList()
 
@@ -136,11 +145,13 @@ private class GpuiTextInput(
 
   private var changeHandler: TextChangeHandler? = null
 
-  override val value: GpuiNode = GpuiNode(node.rawNode()) {
-    runCatching {
-      node.requestFocus()
-    }.isSuccess
-  }
+  override val value: GpuiNode = GpuiNode(
+    handle = node.rawNode(),
+    layoutController = environment.layoutController,
+    onRequestFocus = {
+      runCatching { node.requestFocus() }.isSuccess
+    },
+  )
 
   override val allChildren: List<Widget.Children<GpuiNode>> = emptyList()
 

@@ -4,7 +4,9 @@ import app.cash.redwood.Modifier
 import app.cash.redwood.widget.Widget
 
 public class GpuiChildren(
+  private val environment: GpuiEnvironment,
   private val handle: RedwoodChildrenHandle,
+  private val parentNode: GpuiNode,
 ) : Widget.Children<GpuiNode> {
   private val widgetsList = mutableListOf<Widget<GpuiNode>>()
 
@@ -13,8 +15,10 @@ public class GpuiChildren(
 
   override fun insert(index: Int, widget: Widget<GpuiNode>) {
     widgetsList.add(index, widget)
+    parentNode.attachChild(index, widget.value)
     handle.insert(index.toUInt(), widget.value.handle)
     applyModifier(widget, widget.modifier)
+    environment.layoutController.onTreeChanged()
   }
 
   override fun move(fromIndex: Int, toIndex: Int, count: Int) {
@@ -22,11 +26,22 @@ public class GpuiChildren(
 
     handle.moveRange(fromIndex.toUInt(), toIndex.toUInt(), count.toUInt())
 
-    val moving = widgetsList.subList(fromIndex, fromIndex + count)
-    val moved = moving.toList()
-    moving.clear()
+    val movingWidgets = widgetsList.subList(fromIndex, fromIndex + count).toList()
+    repeat(count) {
+      widgetsList.removeAt(fromIndex)
+    }
     val destination = if (toIndex > fromIndex) toIndex - count else toIndex
-    widgetsList.addAll(destination, moved)
+    widgetsList.addAll(destination, movingWidgets)
+
+    val movingNodes = mutableListOf<GpuiNode>()
+    repeat(count) {
+      movingNodes += parentNode.detachChild(fromIndex)
+    }
+    movingNodes.forEachIndexed { offset, child ->
+      parentNode.attachChild(destination + offset, child)
+    }
+
+    environment.layoutController.onTreeChanged()
   }
 
   override fun remove(index: Int, count: Int) {
@@ -34,9 +49,11 @@ public class GpuiChildren(
 
     handle.remove(index.toUInt(), count.toUInt())
     repeat(count) {
-      val removed = widgetsList.removeAt(index)
-      removed.value.dispose()
+      val removedWidget = widgetsList.removeAt(index)
+      parentNode.detachChild(index)
+      removedWidget.value.dispose()
     }
+    environment.layoutController.onTreeChanged()
   }
 
   override fun onModifierUpdated(index: Int, widget: Widget<GpuiNode>) {
@@ -45,12 +62,16 @@ public class GpuiChildren(
 
   override fun detach() {
     handle.detach()
-    widgetsList.forEach { it.value.dispose() }
+    while (parentNode.layoutChildren.isNotEmpty()) {
+      parentNode.detachChild(parentNode.layoutChildren.lastIndex).dispose()
+    }
     widgetsList.clear()
+    environment.layoutController.onTreeChanged()
   }
 
   public fun applyModifier(widget: Widget<GpuiNode>, modifier: Modifier) {
     widget.value.modifier = modifier
+    widget.value.layoutNode.applyModifier(modifier, environment.density)
     widget.value.markNeedsLayout()
   }
 }

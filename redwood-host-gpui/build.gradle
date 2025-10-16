@@ -48,6 +48,8 @@ if (isMac) {
         implementation projects.redwoodWidget
         implementation projects.redwoodRuntime
         implementation projects.redwoodLayoutApi
+        implementation projects.redwoodLayoutModifiers
+        implementation projects.redwoodYoga
         implementation projects.redwoodUiBasicApi
       }
     }
