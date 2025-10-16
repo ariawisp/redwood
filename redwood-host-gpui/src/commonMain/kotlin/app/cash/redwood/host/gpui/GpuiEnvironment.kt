@@ -7,6 +7,6 @@ import app.cash.redwood.ui.Density
  * Redwood values into the host coordinate space.
  */
 public data class GpuiEnvironment(
-  val surface: RedwoodSurfaceHandle,
+  val surface: GpuiSurface,
   val density: Density,
 )

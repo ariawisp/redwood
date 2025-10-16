@@ -29,7 +29,7 @@ public class GpuiRedwoodUiBasicWidgetFactory(
 
   override fun TextInput(): TextInput<GpuiNode> = GpuiTextInput(environment)
 
-  override fun Reuse(value: Any, modifier: Reuse) {
+  override fun Reuse(value: GpuiNode, modifier: Reuse) {
     // Reuse semantics are not yet implemented for GPUI hosts.
   }
 }
@@ -136,7 +136,11 @@ private class GpuiTextInput(
 
   private var changeHandler: TextChangeHandler? = null
 
-  override val value: GpuiNode = GpuiNode(node.rawNode())
+  override val value: GpuiNode = GpuiNode(node.rawNode()) {
+    runCatching {
+      node.requestFocus()
+    }.isSuccess
+  }
 
   override val allChildren: List<Widget.Children<GpuiNode>> = emptyList()
 

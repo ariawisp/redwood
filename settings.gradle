@@ -153,4 +153,5 @@ if (!hasProperty('redwoodNoApps')) {
   include ':samples:emoji-search:presenter-treehouse'
   include ':samples:emoji-search:schema-protocol-guest'
   include ':samples:emoji-search:schema-protocol-host'
+  include ':samples:gpui-host'
 }

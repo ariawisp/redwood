@@ -3,11 +3,11 @@ package app.cash.redwood.host.gpui
 import app.cash.redwood.layout.api.Constraint as LayoutConstraint
 import app.cash.redwood.layout.api.CrossAxisAlignment as LayoutCrossAxisAlignment
 import app.cash.redwood.layout.api.MainAxisAlignment as LayoutMainAxisAlignment
-import app.cash.redwood.layout.api.Margin
 import app.cash.redwood.layout.api.Overflow as LayoutOverflow
 import app.cash.redwood.ui.Px
 import app.cash.redwood.ui.basic.api.TextFieldState
 import app.cash.redwood.ui.Density
+import app.cash.redwood.ui.Margin
 
 public fun LayoutConstraint.toGpui(): ConstraintKind = when (this) {
   LayoutConstraint.Wrap -> ConstraintKind.WRAP

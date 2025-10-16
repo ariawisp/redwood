@@ -4,6 +4,7 @@ import app.cash.redwood.Modifier
 
 public class GpuiNode(
   internal val handle: RedwoodNodeHandle,
+  private val onRequestFocus: (() -> Boolean)? = null,
 ) {
   public var modifier: Modifier = Modifier
 
@@ -17,8 +18,9 @@ public class GpuiNode(
     runCatching {
       handle.dispose()
     }
-    runCatching {
-      handle.destroy()
-    }
+  }
+
+  public fun requestFocus(): Boolean {
+    return onRequestFocus?.invoke() == true
   }
 }
