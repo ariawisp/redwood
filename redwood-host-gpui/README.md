@@ -1,7 +1,8 @@
 # Redwood GPUI Host
 
 This module exposes Kotlin/Native bindings generated from the `gpui-uniffi` crate so Redwood widget
-factories and view hosts can drive a GPUI surface. It currently targets macOS (arm64/x64) builds.
+factories and view hosts can drive a GPUI surface. Builds are available for macOS (arm64/x64),
+Linux (x64/arm64), and Windows (x64).
 
 ## Getting Started
 
@@ -16,8 +17,6 @@ A runnable example lives in `samples/gpui-host`.
 
 ## Current Limitations
 
-* Only macOS is wired up; GPUI&rsquo;s Linux/Windows backends are not yet exposed through the UniFFI
-  layer.
 * Box horizontal alignment maps `Stretch` to `Start` until GPUI exposes an explicit stretch mode.
 * Box margins are tracked for layout invalidation but do not yet affect GPUI rendering.
 * Reuse modifiers are ignored for now.
