@@ -89,6 +89,7 @@ private class GpuiButton(
     val handler = onClick?.let { callback ->
       object : ButtonClickHandler {
         override fun onClick() {
+          println("[GpuiRedwoodUiBasic] button handler invoked")
           callback()
         }
       }
@@ -170,6 +171,7 @@ private class GpuiTextInput(
     val handler = onChange?.let { callback ->
       object : TextChangeHandler {
         override fun onChange(newState: TextFieldStateFfi) {
+          println("[GpuiRedwoodUiBasic] text input handler invoked")
           callback(newState.toRedwood())
         }
       }
