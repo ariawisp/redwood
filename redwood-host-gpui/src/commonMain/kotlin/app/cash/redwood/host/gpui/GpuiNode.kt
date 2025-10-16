@@ -14,6 +14,8 @@ import app.cash.redwood.yoga.Node
 import app.cash.redwood.yoga.Size
 import app.cash.redwood.yoga.RedwoodYogaApi
 
+private const val DEBUG_LAYOUT = true
+
 public class GpuiNode(
   internal val handle: RedwoodNodeHandle,
   internal val layoutController: GpuiLayoutController,
@@ -24,6 +26,7 @@ public class GpuiNode(
 ) {
   internal val layoutChildren: MutableList<GpuiNode> = mutableListOf()
   internal var parent: GpuiNode? = null
+  internal val debugId: String = "node@" + handle.hashCode().toString(16)
 
   public var modifier: Modifier = Modifier
     private set
@@ -108,6 +111,12 @@ public class GpuiNode(
 
       val size = runCatching { gpuiNode.handle.measure(input) }.getOrNull()
         ?: SizeF(width = 0f, height = 0f)
+      if (DEBUG_LAYOUT) {
+        println(
+          "GpuiNode: measure ${gpuiNode.debugId} -> ${size.width}x${size.height} " +
+            "(input w=$width($widthMode) h=$height($heightMode))",
+        )
+      }
       return Size(size.width, size.height)
     }
   }

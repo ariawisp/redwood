@@ -11,6 +11,8 @@ import app.cash.redwood.yoga.RedwoodYogaApi
  * GPUI thread whenever layout is requested and keeps the Rust-side nodes updated with the latest
  * frames.
  */
+private const val DEBUG_LAYOUT = true
+
 public class GpuiLayoutController {
   private var rootNode: GpuiNode? = null
   private var viewportWidth: Float = Size.UNDEFINED
@@ -67,6 +69,10 @@ public class GpuiLayoutController {
     val ownerWidth = viewportWidth.takeIf { it > 0f } ?: Size.UNDEFINED
     val ownerHeight = viewportHeight.takeIf { it > 0f } ?: Size.UNDEFINED
 
+    if (DEBUG_LAYOUT) {
+      println("GpuiLayoutController: layoutOnce viewport=(${ownerWidth}, ${ownerHeight})")
+    }
+
     root.layoutNode.requestedWidth = ownerWidth
     root.layoutNode.requestedMaxWidth = Size.UNDEFINED
     root.layoutNode.requestedHeight = ownerHeight
@@ -87,6 +93,12 @@ public class GpuiLayoutController {
         width = yogaNode.width,
         height = yogaNode.height,
       )
+      if (DEBUG_LAYOUT) {
+        println(
+          "GpuiLayoutController: set frame ${frame.width}x${frame.height}@" +
+            "(${frame.x}, ${frame.y}) for node=${node.debugId}",
+        )
+      }
       node.setLayoutFrame(frame)
     }
 
