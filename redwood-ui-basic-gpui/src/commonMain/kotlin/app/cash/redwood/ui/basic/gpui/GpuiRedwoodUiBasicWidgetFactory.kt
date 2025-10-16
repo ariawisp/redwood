@@ -94,6 +94,7 @@ private class GpuiButton(
         }
       }
     }
+    println("[GpuiRedwoodUiBasic] button handler registered: ${handler != null}")
     clickHandler = handler
     node.setOnClick(handler)
   }
@@ -176,6 +177,7 @@ private class GpuiTextInput(
         }
       }
     }
+    println("[GpuiRedwoodUiBasic] text input handler registered: ${handler != null}")
     changeHandler = handler
     node.setOnChange(handler)
   }
