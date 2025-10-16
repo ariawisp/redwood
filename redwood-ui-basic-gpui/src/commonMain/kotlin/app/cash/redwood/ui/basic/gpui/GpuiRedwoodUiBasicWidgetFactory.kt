@@ -161,10 +161,15 @@ private class GpuiTextInput(
     }
 
   override fun state(state: TextFieldState) {
+    println(
+      "[GpuiRedwoodUiBasic] text input state() text='${state.text}' sel=" +
+        "${state.selectionStart}..${state.selectionEnd} edits=${state.userEditCount}",
+    )
     node.setState(state.toFfi())
   }
 
   override fun hint(hint: String) {
+    println("[GpuiRedwoodUiBasic] text input hint() value='${hint}'")
     node.setHint(hint.ifEmpty { null })
   }
 
