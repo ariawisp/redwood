@@ -13,10 +13,6 @@ import app.cash.redwood.host.gpui.ScrollListener
 import app.cash.redwood.host.gpui.scrollListener
 import app.cash.redwood.host.gpui.toEdgeInsets
 import app.cash.redwood.host.gpui.toGpui
-import app.cash.redwood.host.gpui.toAlignItems
-import app.cash.redwood.host.gpui.toAlignSelf
-import app.cash.redwood.host.gpui.toBoxJustifyContent
-import app.cash.redwood.host.gpui.toJustifyContent
 import app.cash.redwood.layout.api.Constraint
 import app.cash.redwood.layout.api.CrossAxisAlignment
 import app.cash.redwood.layout.api.MainAxisAlignment
@@ -30,6 +26,7 @@ import app.cash.redwood.ui.Dp
 import app.cash.redwood.ui.Margin
 import app.cash.redwood.ui.Px
 import app.cash.redwood.widget.Widget
+import app.cash.redwood.yoga.AlignItems
 import app.cash.redwood.yoga.AlignSelf
 import app.cash.redwood.yoga.FlexDirection
 import app.cash.redwood.yoga.JustifyContent
@@ -58,7 +55,7 @@ private abstract class GpuiFlexContainer(
   private var scrollListener: ScrollListener? = null
 
   private val layoutNode = Node().apply {
-    flexDirection = direction
+    flexDirection = this@GpuiFlexContainer.direction
   }
 
   final override val value: GpuiNode = GpuiNode(
@@ -75,8 +72,7 @@ private abstract class GpuiFlexContainer(
   final override var modifier: Modifier = Modifier
     set(value) {
       field = value
-      this.value.modifier = value
-      this.value.markNeedsLayout()
+      this.value.applyModifier(value, environment.density)
     }
 
   open fun width(width: Constraint) {
@@ -110,13 +106,13 @@ private abstract class GpuiFlexContainer(
 
   protected fun setMainAxisAlignment(alignment: MainAxisAlignment) {
     node.setMainAxisAlignment(alignment.toGpui())
-    layoutNode.justifyContent = alignment.toJustifyContent()
+    layoutNode.justifyContent = alignment.toYogaJustifyContent()
     value.markNeedsLayout()
   }
 
   protected fun setCrossAxisAlignment(alignment: CrossAxisAlignment) {
     node.setCrossAxisAlignment(alignment.toGpui())
-    layoutNode.alignItems = alignment.toAlignItems()
+    layoutNode.alignItems = alignment.toYogaAlignItems()
     value.markNeedsLayout()
   }
 
@@ -241,8 +237,7 @@ private class GpuiBox(
   override var modifier: Modifier = Modifier
     set(value) {
       field = value
-      this.value.modifier = value
-      this.value.markNeedsLayout()
+      this.value.applyModifier(value, environment.density)
     }
 
   override fun width(width: Constraint) {
@@ -258,14 +253,14 @@ private class GpuiBox(
   override fun horizontalAlignment(horizontalAlignment: CrossAxisAlignment) {
     matchParentWidth = horizontalAlignment == CrossAxisAlignment.Stretch
     node.setHorizontalAlignment(horizontalAlignment.toGpui())
-    layoutNode.alignItems = horizontalAlignment.toAlignItems()
+    layoutNode.alignItems = horizontalAlignment.toYogaAlignItems()
     applyConstraints()
   }
 
   override fun verticalAlignment(verticalAlignment: CrossAxisAlignment) {
     matchParentHeight = verticalAlignment == CrossAxisAlignment.Stretch
     node.setVerticalAlignment(verticalAlignment.toGpui())
-    layoutNode.justifyContent = verticalAlignment.toBoxJustifyContent()
+    layoutNode.justifyContent = verticalAlignment.toYogaBoxJustifyContent()
     applyConstraints()
   }
 
@@ -315,8 +310,7 @@ private class GpuiSpacer(
   override var modifier: Modifier = Modifier
     set(value) {
       field = value
-      this.value.modifier = value
-      this.value.markNeedsLayout()
+      this.value.applyModifier(value, environment.density)
     }
 
   override fun width(width: Dp) {
@@ -328,4 +322,30 @@ private class GpuiSpacer(
     val px = environment.density.run { height.toPx().toFloat() }
     node.setHeight(px)
   }
+}
+
+private fun MainAxisAlignment.toYogaJustifyContent(): JustifyContent = when (this) {
+  MainAxisAlignment.Start -> JustifyContent.FlexStart
+  MainAxisAlignment.Center -> JustifyContent.Center
+  MainAxisAlignment.End -> JustifyContent.FlexEnd
+  MainAxisAlignment.SpaceBetween -> JustifyContent.SpaceBetween
+  MainAxisAlignment.SpaceAround -> JustifyContent.SpaceAround
+  MainAxisAlignment.SpaceEvenly -> JustifyContent.SpaceEvenly
+  else -> JustifyContent.FlexStart
+}
+
+private fun CrossAxisAlignment.toYogaAlignItems(): AlignItems = when (this) {
+  CrossAxisAlignment.Start -> AlignItems.FlexStart
+  CrossAxisAlignment.Center -> AlignItems.Center
+  CrossAxisAlignment.End -> AlignItems.FlexEnd
+  CrossAxisAlignment.Stretch -> AlignItems.Stretch
+  else -> AlignItems.FlexStart
+}
+
+private fun CrossAxisAlignment.toYogaBoxJustifyContent(): JustifyContent = when (this) {
+  CrossAxisAlignment.Start -> JustifyContent.FlexStart
+  CrossAxisAlignment.Center -> JustifyContent.Center
+  CrossAxisAlignment.End -> JustifyContent.FlexEnd
+  CrossAxisAlignment.Stretch -> JustifyContent.FlexStart
+  else -> JustifyContent.FlexStart
 }

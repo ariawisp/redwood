@@ -7,6 +7,7 @@ import app.cash.redwood.host.gpui.LayoutFrame
 import app.cash.redwood.host.gpui.MeasureInput
 import app.cash.redwood.host.gpui.MeasureMode as HostMeasureMode
 import app.cash.redwood.host.gpui.SizeF
+import app.cash.redwood.ui.Density
 import app.cash.redwood.yoga.MeasureCallback
 import app.cash.redwood.yoga.MeasureMode as YogaMeasureMode
 import app.cash.redwood.yoga.Node
@@ -25,6 +26,7 @@ public class GpuiNode(
   internal var parent: GpuiNode? = null
 
   public var modifier: Modifier = Modifier
+    private set
 
   init {
     layoutNode.context = this
@@ -49,6 +51,12 @@ public class GpuiNode(
 
   public fun requestFocus(): Boolean {
     return onRequestFocus?.invoke() == true
+  }
+
+  public fun applyModifier(modifier: Modifier, density: Density) {
+    this.modifier = modifier
+    layoutNode.applyModifier(modifier, density)
+    markNeedsLayout()
   }
 
   internal fun attachChild(index: Int, child: GpuiNode) {

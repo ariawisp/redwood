@@ -35,7 +35,7 @@ public class GpuiRedwoodUiBasicWidgetFactory(
 }
 
 private class GpuiText(
-  environment: GpuiEnvironment,
+  private val environment: GpuiEnvironment,
 ) : Text<GpuiNode> {
   private val node = environment.surface.createText()
 
@@ -49,8 +49,7 @@ private class GpuiText(
   override var modifier: Modifier = Modifier
     set(value) {
       field = value
-      this.value.modifier = value
-      this.value.markNeedsLayout()
+      this.value.applyModifier(value, environment.density)
     }
 
   override fun text(text: String) {
@@ -59,7 +58,7 @@ private class GpuiText(
 }
 
 private class GpuiButton(
-  environment: GpuiEnvironment,
+  private val environment: GpuiEnvironment,
 ) : Button<GpuiNode> {
   private val node = environment.surface.createButton()
 
@@ -75,8 +74,7 @@ private class GpuiButton(
   override var modifier: Modifier = Modifier
     set(value) {
       field = value
-      this.value.modifier = value
-      this.value.markNeedsLayout()
+      this.value.applyModifier(value, environment.density)
     }
 
   override fun text(text: String?) {
@@ -101,7 +99,7 @@ private class GpuiButton(
 }
 
 private class GpuiImage(
-  environment: GpuiEnvironment,
+  private val environment: GpuiEnvironment,
 ) : Image<GpuiNode> {
   private val node = environment.surface.createImage()
 
@@ -117,8 +115,7 @@ private class GpuiImage(
   override var modifier: Modifier = Modifier
     set(value) {
       field = value
-      this.value.modifier = value
-      this.value.markNeedsLayout()
+      this.value.applyModifier(value, environment.density)
     }
 
   override fun url(url: String) {
@@ -139,7 +136,7 @@ private class GpuiImage(
 }
 
 private class GpuiTextInput(
-  environment: GpuiEnvironment,
+  private val environment: GpuiEnvironment,
 ) : TextInput<GpuiNode> {
   private val node = environment.surface.createTextInput()
 
@@ -158,8 +155,7 @@ private class GpuiTextInput(
   override var modifier: Modifier = Modifier
     set(value) {
       field = value
-      this.value.modifier = value
-      this.value.markNeedsLayout()
+      this.value.applyModifier(value, environment.density)
     }
 
   override fun state(state: TextFieldState) {

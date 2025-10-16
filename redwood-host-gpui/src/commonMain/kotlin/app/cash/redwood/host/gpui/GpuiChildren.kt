@@ -70,8 +70,6 @@ public class GpuiChildren(
   }
 
   public fun applyModifier(widget: Widget<GpuiNode>, modifier: Modifier) {
-    widget.value.modifier = modifier
-    widget.value.layoutNode.applyModifier(modifier, environment.density)
-    widget.value.markNeedsLayout()
+    widget.value.applyModifier(modifier, environment.density)
   }
 }
