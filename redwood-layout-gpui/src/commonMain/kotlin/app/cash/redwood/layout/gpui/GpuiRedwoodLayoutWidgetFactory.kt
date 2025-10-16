@@ -162,9 +162,15 @@ private class GpuiBox(
 
   private var widthConstraint: Constraint = Constraint.Wrap
   private var heightConstraint: Constraint = Constraint.Wrap
+  private var matchParentWidth: Boolean = false
+  private var matchParentHeight: Boolean = false
   private var margin: Margin = Margin.Zero
 
   override val value: GpuiNode = GpuiNode(node.rawNode())
+
+  init {
+    applyConstraints()
+  }
 
   override val children: Widget.Children<GpuiNode>
     get() = _children
@@ -180,39 +186,47 @@ private class GpuiBox(
 
   override fun width(width: Constraint) {
     widthConstraint = width
-    value.markNeedsLayout()
+    applyConstraints()
   }
 
   override fun height(height: Constraint) {
     heightConstraint = height
-    value.markNeedsLayout()
+    applyConstraints()
   }
 
   override fun horizontalAlignment(horizontalAlignment: CrossAxisAlignment) {
-    node.setHorizontalAlignment(horizontalAlignment.toMainAxisAlignment().toGpui())
+    matchParentWidth = horizontalAlignment == CrossAxisAlignment.Stretch
+    node.setHorizontalAlignment(horizontalAlignment.toGpui())
+    applyConstraints()
   }
 
   override fun verticalAlignment(verticalAlignment: CrossAxisAlignment) {
+    matchParentHeight = verticalAlignment == CrossAxisAlignment.Stretch
     node.setVerticalAlignment(verticalAlignment.toGpui())
+    applyConstraints()
   }
 
   override fun margin(margin: Margin) {
     if (this.margin != margin) {
       this.margin = margin
+      node.setMargin(margin.toEdgeInsets(environment.density))
       value.markNeedsLayout()
-      environment.surface.requestLayout()
     }
   }
-}
 
-private fun CrossAxisAlignment.toMainAxisAlignment(): MainAxisAlignment =
-  when (this) {
-    CrossAxisAlignment.Start -> MainAxisAlignment.Start
-    CrossAxisAlignment.Center -> MainAxisAlignment.Center
-    CrossAxisAlignment.End -> MainAxisAlignment.End
-    CrossAxisAlignment.Stretch -> MainAxisAlignment.Start
-    else -> MainAxisAlignment.Start
+  private fun applyConstraints() {
+    val width = when {
+      widthConstraint == Constraint.Fill || matchParentWidth -> Constraint.Fill
+      else -> Constraint.Wrap
+    }
+    val height = when {
+      heightConstraint == Constraint.Fill || matchParentHeight -> Constraint.Fill
+      else -> Constraint.Wrap
+    }
+    node.setConstraints(width.toGpui(), height.toGpui())
+    value.markNeedsLayout()
   }
+}
 
 private class GpuiSpacer(
   private val environment: GpuiEnvironment,
