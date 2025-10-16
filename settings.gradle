@@ -115,6 +115,8 @@ include ':redwood-ui-core-uiview'
 include ':redwood-ui-core-view'
 include ':redwood-ui-core-widget'
 include ':redwood-host-gpui'
+include ':redwood-layout-gpui'
+include ':redwood-ui-basic-gpui'
 
 include ':test-app:schema'
 include ':test-app:schema:compose'

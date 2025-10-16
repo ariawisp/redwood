@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Square, Inc.
+ * Copyright (C) 2025 Square, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package app.cash.redwood.ui
 
-/** iOS's coordinate system accounts for density automatically. */
+/** Native coordinate systems (Apple, Linux, Windows) account for density automatically. */
 public val Density.Companion.Default: Density get() = DefaultDensity
 
 private val DefaultDensity = Density(1.0)

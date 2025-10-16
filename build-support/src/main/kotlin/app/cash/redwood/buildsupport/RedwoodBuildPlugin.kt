@@ -22,6 +22,7 @@ import app.cash.redwood.buildsupport.TargetGroup.Tooling
 import app.cash.redwood.buildsupport.TargetGroup.ToolkitAllWithoutAndroid
 import app.cash.redwood.buildsupport.TargetGroup.ToolkitAndroid
 import app.cash.redwood.buildsupport.TargetGroup.ToolkitComposeUi
+import app.cash.redwood.buildsupport.TargetGroup.ToolkitDesktopGpui
 import app.cash.redwood.buildsupport.TargetGroup.ToolkitHtml
 import app.cash.redwood.buildsupport.TargetGroup.ToolkitIos
 import app.cash.redwood.buildsupport.TargetGroup.TreehouseCommon
@@ -315,6 +316,9 @@ private class RedwoodBuildExtensionImpl(private val project: Project) : RedwoodB
     when (modifiedGroup.group) {
       Common -> {
         project.applyKotlinMultiplatform {
+          if (modifiedGroup[DesktopTargets, DesktopTargets.Disable] == DesktopTargets.Enable) {
+            desktopTargets()
+          }
           iosTargets()
           js {
             modifiedGroup[JsTests, NodeJs].applyTo(this)
@@ -329,6 +333,9 @@ private class RedwoodBuildExtensionImpl(private val project: Project) : RedwoodB
         project.applyKotlinMultiplatform {
           androidTarget {
             modifiedGroup[AndroidDeviceTests, AndroidDeviceTests.Disable].applyTo(project)
+          }
+          if (modifiedGroup[DesktopTargets, DesktopTargets.Disable] == DesktopTargets.Enable) {
+            desktopTargets()
           }
           iosTargets()
           js {
@@ -378,6 +385,13 @@ private class RedwoodBuildExtensionImpl(private val project: Project) : RedwoodB
           iosTargets()
           jvm()
         }
+      }
+      ToolkitDesktopGpui -> {
+        project.applyKotlinMultiplatform {
+          desktopTargets()
+        }
+        // Needed for lint consumers in Android projects to analyze this dependency.
+        project.plugins.apply("com.android.lint")
       }
       TreehouseCommon -> {
         project.plugins.apply("com.android.library")
@@ -718,4 +732,11 @@ private fun Project.applyKotlinMultiplatform(block: KotlinMultiplatformExtension
 private fun KotlinMultiplatformExtension.iosTargets() {
   iosArm64()
   iosSimulatorArm64()
+}
+
+private fun KotlinMultiplatformExtension.desktopTargets() {
+  macosArm64()
+  macosX64()
+  linuxX64()
+  mingwX64()
 }
