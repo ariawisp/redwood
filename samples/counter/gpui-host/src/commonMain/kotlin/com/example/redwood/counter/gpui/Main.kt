@@ -10,11 +10,17 @@ import app.cash.redwood.host.gpui.GpuiWindowEvents
 import app.cash.redwood.host.gpui.GpuiWindowSize
 import app.cash.redwood.host.gpui.createRedwoodView
 import app.cash.redwood.host.gpui.runGpuiApp
-import app.cash.redwood.runtime.RedwoodComposition
+import app.cash.redwood.compose.RedwoodComposition
 import app.cash.redwood.ui.Margin
 import app.cash.redwood.ui.basic.gpui.GpuiRedwoodUiBasicWidgetSystem
 import com.example.redwood.counter.presenter.Counter
+import androidx.compose.runtime.BroadcastFrameClock
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlin.time.TimeSource
 import kotlinx.coroutines.cancel
 
 fun main() {
@@ -25,7 +31,9 @@ fun main() {
 }
 
 private fun launchCounter(app: GpuiApp) {
-  val scope = MainScope()
+  val frameClock = BroadcastFrameClock {}
+  val baseScope = MainScope()
+  val scope: CoroutineScope = CoroutineScope(baseScope.coroutineContext + frameClock)
 
   lateinit var view: GpuiRedwoodView
 
@@ -60,4 +68,13 @@ private fun launchCounter(app: GpuiApp) {
 
   view.window.show()
   view.requestLayout()
+
+  // Simple frame ticker to drive Compose recomposition.
+  val start = TimeSource.Monotonic.markNow()
+  scope.launch {
+    while (isActive) {
+      frameClock.sendFrame(start.elapsedNow().inWholeNanoseconds)
+      delay(16)
+    }
+  }
 }

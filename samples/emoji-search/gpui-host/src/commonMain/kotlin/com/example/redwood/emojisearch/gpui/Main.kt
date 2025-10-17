@@ -10,13 +10,19 @@ import app.cash.redwood.host.gpui.GpuiWindowEvents
 import app.cash.redwood.host.gpui.GpuiWindowSize
 import app.cash.redwood.host.gpui.createRedwoodView
 import app.cash.redwood.host.gpui.runGpuiApp
-import app.cash.redwood.runtime.RedwoodComposition
+import app.cash.redwood.compose.RedwoodComposition
+import androidx.compose.runtime.BroadcastFrameClock
 import app.cash.redwood.ui.Margin
 import app.cash.redwood.ui.basic.gpui.GpuiRedwoodUiBasicWidgetSystem
 import com.example.redwood.emojisearch.presenter.EmojiSearch
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
+import kotlin.time.TimeSource
 
 fun main() {
   runGpuiApp(
@@ -26,7 +32,9 @@ fun main() {
 }
 
 private fun launchEmojiSearch(app: GpuiApp) {
-  val scope = MainScope()
+  val frameClock = BroadcastFrameClock {}
+  val baseScope = MainScope()
+  val scope: CoroutineScope = CoroutineScope(baseScope.coroutineContext + frameClock)
   val httpClient = JvmHttpClient(OkHttpClient())
   val navigator = DesktopNavigator
 
@@ -69,4 +77,13 @@ private fun launchEmojiSearch(app: GpuiApp) {
 
   view.window.show()
   view.requestLayout()
+
+  // Simple frame ticker to drive Compose recomposition.
+  val start = TimeSource.Monotonic.markNow()
+  scope.launch {
+    while (isActive) {
+      frameClock.sendFrame(start.elapsedNow().inWholeNanoseconds)
+      delay(16)
+    }
+  }
 }
