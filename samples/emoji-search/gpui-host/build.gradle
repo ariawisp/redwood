@@ -63,10 +63,11 @@ kotlin {
   sourceSets {
     commonMain {
       dependencies {
-        implementation projects.samples.emojiSearch.presenter
-        implementation projects.samples.emojiSearch.schemaProtocolHost
-        implementation projects.samples.emojiSearch.launcher
+        // Inline presenter UI to avoid non-native deps.
+        implementation projects.redwoodUiBasicCompose
+        implementation projects.redwoodLazylayoutCompose
         implementation projects.redwoodCompose
+        implementation libs.ktor.client.core
         implementation projects.redwoodHostGpui
         implementation projects.redwoodLayoutGpui
         implementation projects.redwoodUiBasicGpui
@@ -74,7 +75,26 @@ kotlin {
         implementation projects.redwoodRuntime
         implementation projects.redwoodLayoutApi
         implementation projects.redwoodUiBasicApi
-        implementation libs.okhttp
+        implementation libs.kotlinx.serialization.json
+      }
+    }
+    if (isMac) {
+      // macOS engine dependency consolidated into shared macosMain
+      maybeCreate("macosMain").dependencies {
+        implementation libs.ktor.client.darwin
+      }
+    }
+    if (isLinux) {
+      // Linux engine dependency consolidated into shared linuxMain
+      maybeCreate("linuxMain").dependencies {
+        implementation libs.ktor.client.curl
+      }
+    }
+    if (isWindows) {
+      mingwX64Main {
+        dependencies {
+          implementation libs.ktor.client.winhttp
+        }
       }
     }
   }

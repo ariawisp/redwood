@@ -2,6 +2,7 @@
 kotlin = "2.2.10"
 kotlinx-coroutines = "1.10.2"
 kotlinx-serialization = "1.9.0"
+ktor = "3.3.1"
 androidx-activity = "1.10.1"
 androidx-compose-ui = "1.9.3"
 jbCompose = "1.8.2"
@@ -88,6 +89,10 @@ robolectric = { module = "org.robolectric:robolectric", version = "4.16" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 okio-assetfilesystem = { module = "com.squareup.okio:okio-assetfilesystem", version.ref = "okio" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version = "5.2.0" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
+ktor-client-curl = { module = "io.ktor:ktor-client-curl", version.ref = "ktor" }
+ktor-client-winhttp = { module = "io.ktor:ktor-client-winhttp", version.ref = "ktor" }
 paging-compose-common = { module = "app.cash.paging:paging-compose-common", version = "3.3.0-alpha02-0.5.1" }
 zipline = { module = "app.cash.zipline:zipline", version.ref = "zipline" }
 zipline-gradlePlugin = { module = "app.cash.zipline:zipline-gradle-plugin", version.ref = "zipline" }

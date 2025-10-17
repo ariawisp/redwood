@@ -21,7 +21,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import okhttp3.OkHttpClient
 import kotlin.time.TimeSource
 
 fun main() {
@@ -35,7 +34,7 @@ private fun launchEmojiSearch(app: GpuiApp) {
   val frameClock = BroadcastFrameClock {}
   val baseScope = MainScope()
   val scope: CoroutineScope = CoroutineScope(baseScope.coroutineContext + frameClock)
-  val httpClient = JvmHttpClient(OkHttpClient())
+  val httpClient = platformHttpClient()
   val navigator = DesktopNavigator
 
   lateinit var view: GpuiRedwoodView
