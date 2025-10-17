@@ -8,12 +8,11 @@ kotlin {
   sourceSets {
     commonMain {
       dependencies {
-        implementation projects.redwoodUiBasicWidget
-        implementation projects.redwoodUiBasicApi
-        implementation projects.redwoodUiBasicModifiers
+        implementation projects.redwoodLazylayoutApi
+        implementation projects.redwoodLazylayoutWidget
         implementation projects.redwoodRuntime
         implementation projects.redwoodHostGpui
-        implementation projects.redwoodLazylayoutGpui
+        implementation projects.redwoodLayoutGpui
       }
     }
     commonTest {
