@@ -11,4 +11,5 @@ public data class GpuiEnvironment(
   val density: Density,
   val layoutController: GpuiLayoutController,
   val theme: GpuiTheme? = null,
+  val textInputKeyBindings: List<GpuiTextInputKeyBinding>? = null,
 )

@@ -71,4 +71,10 @@ public fun GpuiTextInputTheme.toFfi(): TextInputThemeFfi = TextInputThemeFfi(
   caretColor = caretColor.toUInt(),
   paddingHorizontal = paddingHorizontal,
   paddingVertical = paddingVertical,
+  disabledTextColor = disabledTextColor?.toUInt(),
+  disabledBackgroundColor = disabledBackgroundColor?.toUInt(),
+  disabledBorderColor = disabledBorderColor?.toUInt(),
+  readOnlyTextColor = readOnlyTextColor?.toUInt(),
+  readOnlyBackgroundColor = readOnlyBackgroundColor?.toUInt(),
+  readOnlyBorderColor = readOnlyBorderColor?.toUInt(),
 )

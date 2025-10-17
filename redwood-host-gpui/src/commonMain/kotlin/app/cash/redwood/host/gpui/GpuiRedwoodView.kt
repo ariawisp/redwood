@@ -97,6 +97,7 @@ public fun GpuiApp.createRedwoodView(
   config: GpuiWindowConfig = GpuiWindowConfig(),
   density: Density = Density(1.0),
   theme: GpuiTheme? = null,
+  textInputKeyBindings: List<GpuiTextInputKeyBinding>? = null,
   delegate: GpuiWindowEvents? = null,
 ): GpuiRedwoodView {
   var pendingViewport: GpuiWindowSize? = null
@@ -124,7 +125,8 @@ public fun GpuiApp.createRedwoodView(
   val surface = window.createSurface()
   val layoutController = GpuiLayoutController()
   surface.layoutController = layoutController
-  val environment = GpuiEnvironment(surface, density, layoutController, theme)
+  val environment = GpuiEnvironment(surface, density, layoutController, theme, textInputKeyBindings)
+  textInputKeyBindings?.let(::configureTextInputKeyBindings)
   val view = GpuiRedwoodView(window, environment)
   redwoodView = view
   pendingViewport?.let { view.updateViewport(it) }

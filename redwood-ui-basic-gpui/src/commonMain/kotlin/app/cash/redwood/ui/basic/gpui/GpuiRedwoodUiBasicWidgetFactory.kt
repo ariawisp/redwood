@@ -144,9 +144,6 @@ private class GpuiTextInput(
   init {
     environment.theme?.textInput?.let { node.setTheme(it.toFfi()) }
   }
-  init {
-    environment.theme?.textInput?.let { node.setTheme(it.toFfi()) }
-  }
 
   private var changeHandler: TextChangeHandler? = null
 
@@ -184,5 +181,13 @@ private class GpuiTextInput(
     }
     changeHandler = handler
     node.setOnChange(handler)
+  }
+
+  fun setEnabled(enabled: Boolean) {
+    node.setEnabled(enabled)
+  }
+
+  fun setReadOnly(readOnly: Boolean) {
+    node.setReadOnly(readOnly)
   }
 }

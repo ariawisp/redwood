@@ -13,4 +13,10 @@ public data class GpuiTextInputTheme(
   val caretColor: Long = 0x2A63D9FF,
   val paddingHorizontal: Float = 12f,
   val paddingVertical: Float = 8f,
+  val disabledTextColor: Long? = null,
+  val disabledBackgroundColor: Long? = null,
+  val disabledBorderColor: Long? = null,
+  val readOnlyTextColor: Long? = null,
+  val readOnlyBackgroundColor: Long? = null,
+  val readOnlyBorderColor: Long? = null,
 )
