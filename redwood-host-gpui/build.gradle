@@ -62,7 +62,7 @@ if (isMac) {
 }
 
 cargo {
-  packageDirectory = rootProject.layout.projectDirectory.dir("../gpui-standalone/gpui-main/crates/gpui-uniffi")
+  packageDirectory = rootProject.layout.projectDirectory.dir("../gpui-standalone/gpui/crates/gpui-uniffi")
 }
 
 if (rustTargets.isEmpty()) {
