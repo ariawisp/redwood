@@ -129,6 +129,8 @@ public fun GpuiApp.createRedwoodView(
   textInputKeyBindings?.let(::configureTextInputKeyBindings)
   val view = GpuiRedwoodView(window, environment)
   redwoodView = view
-  pendingViewport?.let { view.updateViewport(it) }
+  val initialViewport = pendingViewport
+    ?: config.contentSize.takeIf { it.width > 0f || it.height > 0f }
+  initialViewport?.let { view.updateViewport(it) }
   return view
 }

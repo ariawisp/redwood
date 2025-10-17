@@ -43,8 +43,7 @@ data class EmojiImage(
   val url: String,
 )
 
-@Suppress("FUN_INTERFACE_WITH_SUSPEND_FUNCTION")
-fun interface HttpClient {
+interface HttpClient {
   suspend fun call(url: String, headers: Map<String, String>): String
 }
 
@@ -58,7 +57,7 @@ fun EmojiSearch(
   httpClient: HttpClient,
   navigator: Navigator,
   modifier: Modifier = Modifier,
-  viewInsets: Margin = LocalUiConfiguration.current.safeAreaInsets,
+  viewInsets: Margin = LocalUiConfiguration.current.viewInsets,
 ) {
   val scope = rememberCoroutineScope()
   val allEmojis = remember { mutableStateListOf<EmojiImage>() }
@@ -171,4 +170,3 @@ val loadingEmojiImage = EmojiImage(
   label = "loading…",
   url = "https://github.githubassets.com/images/icons/emoji/unicode/231a.png?v8",
 )
-
