@@ -29,6 +29,8 @@ private class GpuiLazyList(
   private val layoutFactory = GpuiRedwoodLayoutWidgetFactory(environment)
   private val column = layoutFactory.Column().apply {
     overflow(Overflow.Scroll)
+    // Ensure the lazy list consumes available viewport height by default so rows are visible.
+    height(Constraint.Fill)
   }
 
   override var modifier: Modifier
