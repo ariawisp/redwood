@@ -61,3 +61,14 @@ public fun TextFieldStateFfi.toRedwood(): TextFieldState = TextFieldState(
 )
 
 public fun Px.Companion.fromHost(offsetPx: Float): Px = Px(offsetPx.toDouble())
+
+public fun GpuiTextInputTheme.toFfi(): TextInputThemeFfi = TextInputThemeFfi(
+  textColor = textColor.toUInt(),
+  placeholderColor = placeholderColor.toUInt(),
+  backgroundColor = backgroundColor.toUInt(),
+  borderColor = borderColor.toUInt(),
+  selectionColor = selectionColor.toUInt(),
+  caretColor = caretColor.toUInt(),
+  paddingHorizontal = paddingHorizontal,
+  paddingVertical = paddingVertical,
+)

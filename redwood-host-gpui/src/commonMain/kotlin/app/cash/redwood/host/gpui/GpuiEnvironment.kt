@@ -10,4 +10,5 @@ public data class GpuiEnvironment(
   val surface: GpuiSurface,
   val density: Density,
   val layoutController: GpuiLayoutController,
+  val theme: GpuiTheme? = null,
 )

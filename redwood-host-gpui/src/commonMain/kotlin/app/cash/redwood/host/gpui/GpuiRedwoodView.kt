@@ -96,6 +96,7 @@ public class GpuiRedwoodView internal constructor(
 public fun GpuiApp.createRedwoodView(
   config: GpuiWindowConfig = GpuiWindowConfig(),
   density: Density = Density(1.0),
+  theme: GpuiTheme? = null,
   delegate: GpuiWindowEvents? = null,
 ): GpuiRedwoodView {
   var pendingViewport: GpuiWindowSize? = null
@@ -123,7 +124,7 @@ public fun GpuiApp.createRedwoodView(
   val surface = window.createSurface()
   val layoutController = GpuiLayoutController()
   surface.layoutController = layoutController
-  val environment = GpuiEnvironment(surface, density, layoutController)
+  val environment = GpuiEnvironment(surface, density, layoutController, theme)
   val view = GpuiRedwoodView(window, environment)
   redwoodView = view
   pendingViewport?.let { view.updateViewport(it) }

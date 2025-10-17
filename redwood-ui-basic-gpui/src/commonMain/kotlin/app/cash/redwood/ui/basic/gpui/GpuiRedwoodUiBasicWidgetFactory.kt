@@ -141,6 +141,9 @@ private class GpuiTextInput(
   private val environment: GpuiEnvironment,
 ) : TextInput<GpuiNode> {
   private val node = environment.surface.createTextInput()
+  init {
+    environment.theme?.textInput?.let { node.setTheme(it.toFfi()) }
+  }
 
   private var changeHandler: TextChangeHandler? = null
 
