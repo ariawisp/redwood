@@ -144,6 +144,9 @@ private class GpuiTextInput(
   init {
     environment.theme?.textInput?.let { node.setTheme(it.toFfi()) }
   }
+  init {
+    environment.theme?.textInput?.let { node.setTheme(it.toFfi()) }
+  }
 
   private var changeHandler: TextChangeHandler? = null
 
