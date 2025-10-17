@@ -161,15 +161,10 @@ private class GpuiTextInput(
     }
 
   override fun state(state: TextFieldState) {
-    println(
-      "[GpuiRedwoodUiBasic] text input state() text='${state.text}' sel=" +
-        "${state.selectionStart}..${state.selectionEnd} edits=${state.userEditCount}",
-    )
     node.setState(state.toFfi())
   }
 
   override fun hint(hint: String) {
-    println("[GpuiRedwoodUiBasic] text input hint() value='${hint}'")
     node.setHint(hint.ifEmpty { null })
   }
 
@@ -177,12 +172,10 @@ private class GpuiTextInput(
     val handler = onChange?.let { callback ->
       object : TextChangeHandler {
         override fun onChange(newState: TextFieldStateFfi) {
-          println("[GpuiRedwoodUiBasic] text input handler invoked")
           callback(newState.toRedwood())
         }
       }
     }
-    println("[GpuiRedwoodUiBasic] text input handler registered: ${handler != null}")
     changeHandler = handler
     node.setOnChange(handler)
   }
