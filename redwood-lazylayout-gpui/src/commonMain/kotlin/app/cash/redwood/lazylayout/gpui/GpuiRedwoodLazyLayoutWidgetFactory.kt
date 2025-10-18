@@ -76,7 +76,7 @@ private class GpuiLazyList(
         val slotIndex = index + offset
         val slot = RowSlot(slotIndex)
         rowSlots.add(slotIndex, slot)
-        // Do not bind here. Views are created only for the visible viewport.
+        // Do not bind here; we only bind visible rows in updateViewportForOffset().
       }
       reindex(startIndex = index)
       // Defer viewport update until end of changes or scroll event to avoid thrash.
@@ -210,11 +210,11 @@ private class GpuiLazyList(
 
     val childrenCount = handle.childrenCount().toInt().coerceAtLeast(0)
 
-    // Bootstrap: if no children are mounted yet, bind an initial visible range so the
-    // list can display and the scroll strategy can stabilize.
+    // Bootstrap: if no children are mounted yet, bind an initial small window
+    // so the loading strategy can stabilize and promote content.
     if (childrenCount == 0) {
       val maxIndex = (processor.size - 1).coerceAtLeast(0)
-      val lastToBind = minOf(15, maxIndex)
+      val lastToBind = minOf(9, maxIndex)
       bindVisibleRange(0, lastToBind)
       println("[GpuiLazyList][viewport] childrenCount=0 first=0 last=$lastToBind size=${processor.size}")
       scrollProcessor.onUserScroll(0, lastToBind)
