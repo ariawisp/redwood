@@ -96,6 +96,10 @@ public class GpuiNode(
     }
   }
 
+  public fun measuredWidth(): Float = layoutNode.width
+
+  public fun measuredHeight(): Float = layoutNode.height
+
   private object RedwoodMeasureCallback : MeasureCallback {
     override fun measure(
       node: Node,

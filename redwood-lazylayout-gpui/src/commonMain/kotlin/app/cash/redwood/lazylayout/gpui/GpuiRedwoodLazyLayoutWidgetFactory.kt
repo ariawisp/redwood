@@ -52,7 +52,26 @@ private class GpuiLazyList(
     get() = column.value
 
   private val processor = object : LazyListUpdateProcessor<RowSlot, GpuiNode>() {
+    override fun createPlaceholder(original: GpuiNode): GpuiNode? {
+      val spacer = layoutFactory.Spacer()
+
+      val widthPx = original.measuredWidth().takeIf { it.isFinite() && it > 0f }
+      if (widthPx != null) {
+        val widthDp = environment.density.run { widthPx.toDp() }
+        spacer.width(widthDp)
+      }
+
+      val heightPx = original.measuredHeight().takeIf { it.isFinite() && it > 0f }
+      if (heightPx != null) {
+        val heightDp = environment.density.run { heightPx.toDp() }
+        spacer.height(heightDp)
+      }
+
+      return spacer.value
+    }
+
     override fun insertRows(index: Int, count: Int) {
+      println("[GpuiLazyList] insertRows index=$index count=$count")
       repeat(count) { offset ->
         val slotIndex = index + offset
         val slot = RowSlot(slotIndex)
@@ -80,6 +99,7 @@ private class GpuiLazyList(
     }
 
     override fun setContent(view: RowSlot, widget: Widget<GpuiNode>?) {
+      if (widget?.let { it::class.simpleName } == "SizeOnlyPlaceholderWidget") println("[GpuiLazyList] bindings consumed placeholder at index=${view.index}"); widgetIsNull=${widget == null}")
       view.setContent(widget)
       updateViewportForOffset()
     }
