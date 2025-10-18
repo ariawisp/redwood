@@ -87,10 +87,24 @@ fun EmojiSearch(
   }
 
   var searchTerm by rememberSaveable(stateSaver = searchTermSaver) { mutableStateOf(TextFieldState("")) }
+  // Debounce search to reduce churn on large lists.
+  var committedSearch by remember { mutableStateOf("") }
+  LaunchedEffect(searchTerm.text) {
+    // Small delay to accumulate rapid keystrokes
+    kotlinx.coroutines.delay(90)
+    committedSearch = searchTerm.text
+  }
 
-  val lazyListState = rememberLazyListState()
+  val lazyListState = rememberLazyListState(
+    strategy = ScrollOptimizedLoadingStrategy(
+      defaultPreloadItemCount = 6,
+      scrollInProgressPreloadItemCount = 3,
+      primaryPreloadItemCount = 8,
+      secondaryPreloadItemCount = 4,
+    ),
+  )
 
-  LaunchedEffect(searchTerm) {
+  LaunchedEffect(committedSearch) {
     lazyListState.programmaticScroll(0, animated = true)
   }
 
@@ -111,13 +125,17 @@ fun EmojiSearch(
     }
   }
 
-  val filteredEmojis by remember {
-    derivedStateOf {
-      val searchTerms = searchTerm.text.split(" ")
-      allEmojis.filter { image ->
-        searchTerms.all { image.label.contains(it, ignoreCase = true) }
+  var filteredEmojis by remember { mutableStateOf<List<EmojiImage>>(emptyList()) }
+  LaunchedEffect(committedSearch, allEmojis.size) {
+    val terms = committedSearch.split(" ")
+      .filter { it.isNotBlank() }
+    val source = allEmojis.toList()
+    val result = if (terms.isEmpty()) source else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+      source.filter { image ->
+        terms.all { image.label.contains(it, ignoreCase = true) }
       }
     }
+    filteredEmojis = result
   }
 
   Column(
