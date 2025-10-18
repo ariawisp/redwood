@@ -136,15 +136,19 @@ private abstract class GpuiFlexContainer(
     val hasGrowModifier = hasGrowModifier()
     val hasShrinkModifier = hasShrinkModifier()
     when (direction) {
+      // For a Row child: height Fill should grow along a parent's Column main axis.
+      // width Fill should stretch along the cross axis (alignSelf).
       FlexDirection.Row -> {
         if (!hasGrowModifier) {
-          layoutNode.flexGrow = if (widthConstraint == Constraint.Fill) 1f else 0f
+          layoutNode.flexGrow = if (heightConstraint == Constraint.Fill) 1f else 0f
         }
         if (!hasShrinkModifier) {
           layoutNode.flexShrink = 0f
         }
-        layoutNode.alignSelf = if (heightConstraint == Constraint.Fill) AlignSelf.Stretch else AlignSelf.Auto
+        layoutNode.alignSelf = if (widthConstraint == Constraint.Fill) AlignSelf.Stretch else AlignSelf.Auto
       }
+      // For a Column child: height Fill grows along a parent's Column main axis;
+      // width Fill stretches across the cross axis.
       FlexDirection.Column -> {
         if (!hasGrowModifier) {
           layoutNode.flexGrow = if (heightConstraint == Constraint.Fill) 1f else 0f

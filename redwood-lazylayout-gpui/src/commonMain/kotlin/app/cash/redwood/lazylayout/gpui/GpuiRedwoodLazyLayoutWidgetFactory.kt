@@ -99,7 +99,10 @@ private class GpuiLazyList(
     }
 
     override fun setContent(view: RowSlot, widget: Widget<GpuiNode>?) {
-      val placeholder = widget?.let { it::class.simpleName == "SizeOnlyPlaceholderWidget" } == true
+      val placeholder = when (widget?.let { it::class.simpleName }) {
+        "SizeOnlyPlaceholderWidget", "GpuiSpacer" -> true
+        else -> false
+      }
       println(
         "[GpuiLazyList] setContent index=${view.index} widgetIsNull=${widget == null} " +
           "widgetType=${widget?.let { it::class.simpleName }} placeholder=$placeholder",
@@ -110,8 +113,13 @@ private class GpuiLazyList(
       if (!placeholder && widget != null && view.index < 5) {
         println("[GpuiLazyList] row content preview index=${view.index} widget=${widget::class.simpleName}")
       }
-      view.setContent(widget)
-      updateViewportForOffset()
+      // Only mount real rows in the GPUI tree; placeholders have zero height and
+      // break scroll computations if inserted. Clear the slot for placeholders.
+      if (placeholder) {
+        view.setContent(null)
+      } else {
+        view.setContent(widget)
+      }
     }
 
     override fun detach(view: RowSlot) {
@@ -216,42 +224,53 @@ private class GpuiLazyList(
     scrollProcessor.onUserScroll(first, last)
   }
 
-  private inner class RowSlot(
-    index: Int,
-  ) {
-    var index: Int = index
-    var binding: Binding<RowSlot, GpuiNode>? = null
-    private var widget: Widget<GpuiNode>? = null
+    private inner class RowSlot(
+      index: Int,
+    ) {
+      var index: Int = index
+      var binding: Binding<RowSlot, GpuiNode>? = null
+      private var widget: Widget<GpuiNode>? = null
 
-    fun setContent(newWidget: Widget<GpuiNode>?) {
-      if (widget === newWidget) return
-
-      val existing = widget
-      if (existing != null) {
-        println("[GpuiLazyList] removing child index=$index type=${existing::class.simpleName}")
-        columnChildren.remove(index, 1)
+      private fun childIndex(): Int {
+        var count = 0
+        for (i in 0 until index) {
+          if (rowSlots[i].widget != null) count++
+        }
+        return count
       }
 
-      widget = newWidget
+      fun setContent(newWidget: Widget<GpuiNode>?) {
+        if (widget === newWidget) return
 
-      if (newWidget != null) {
-        println("[GpuiLazyList] inserting child index=$index type=${newWidget::class.simpleName}")
+        val existing = widget
+        if (existing != null) {
+        val ci = childIndex()
+        println("[GpuiLazyList] removing child index=$index (childIndex=$ci) type=${existing::class.simpleName}")
+        columnChildren.remove(ci, 1)
+        }
+
+        widget = newWidget
+
+        if (newWidget != null) {
+        val ci = childIndex()
+        println("[GpuiLazyList] inserting child index=$index (childIndex=$ci) type=${newWidget::class.simpleName}")
         if (index < 5) {
           val totalChildren = newWidget.allChildren.sumOf { it.widgets.size }
           println("[GpuiLazyList] after insert index=$index childWidgetCount=$totalChildren")
         }
-        columnChildren.insert(index, newWidget)
+        columnChildren.insert(ci, newWidget)
+        }
       }
-    }
 
-    fun detach() {
+      fun detach() {
       if (widget != null) {
-        columnChildren.remove(index, 1)
+        val ci = childIndex()
+        columnChildren.remove(ci, 1)
         widget = null
       }
-      binding = null
+        binding = null
+      }
     }
-  }
 }
 
 private class GpuiRefreshableLazyList(

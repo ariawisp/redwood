@@ -68,9 +68,11 @@ public class GpuiChildren(
 
     handle.remove(index.toUInt(), count.toUInt())
     repeat(count) {
-      val removedWidget = widgetsList.removeAt(index)
+      widgetsList.removeAt(index)
       parentNode.detachChild(index)
-      removedWidget.value.dispose()
+      // Do NOT dispose the removed widget here. Lazy lists frequently demote
+      // and later re-promote the same widget instance; disposing its GPUI node
+      // would make subsequent inserts fail with AlreadyDisposed.
     }
     environment.layoutController.onTreeChanged()
   }

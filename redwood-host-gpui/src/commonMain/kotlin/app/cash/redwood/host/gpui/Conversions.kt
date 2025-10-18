@@ -60,7 +60,7 @@ public fun TextFieldStateFfi.toRedwood(): TextFieldState = TextFieldState(
   userEditCount = userEditCount.toLong(),
 )
 
-public fun Px.Companion.fromHost(offsetPx: Float): Px = Px(offsetPx.toDouble())
+public fun Px.Companion.fromHost(offsetPx: Float): Px = Px(offsetPx.coerceAtLeast(0f).toDouble())
 
 public fun GpuiTextInputTheme.toFfi(): TextInputThemeFfi = TextInputThemeFfi(
   textColor = textColor.toUInt(),

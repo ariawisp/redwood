@@ -85,11 +85,11 @@ internal fun Node.applyModifier(parentModifier: Modifier, density: Density): Boo
   val oldRequestedMaxHeight = requestedMaxHeight
   var newRequestedMaxHeight = Float.NaN
   val oldFlexGrow = flexGrow
-  var newFlexGrow = 0f
+  var newFlexGrow = oldFlexGrow
   val oldFlexShrink = flexShrink
-  var newFlexShrink = 0f
+  var newFlexShrink = oldFlexShrink
   val oldFlexBasis = flexBasis
-  var newFlexBasis = -1f
+  var newFlexBasis = oldFlexBasis
 
   parentModifier.forEachScoped { childModifier ->
     when (childModifier) {
@@ -133,7 +133,7 @@ internal fun Node.applyModifier(parentModifier: Modifier, density: Density): Boo
         val flex = childModifier.value.coerceAtLeast(0.0).toFloat()
         newFlexGrow = flex
         newFlexShrink = 1.0f
-        newFlexBasis = if (flex > 0) 0.0f else -1.0f
+        newFlexBasis = if (flex > 0) 0.0f else oldFlexBasis
       }
     }
   }
@@ -171,7 +171,7 @@ internal fun Node.applyModifier(parentModifier: Modifier, density: Density): Boo
   if (oldFlexShrink != newFlexShrink) {
     flexShrink = newFlexShrink
   }
-  if (oldFlexBasis != newFlexBasis && newFlexBasis >= 0f) {
+  if (oldFlexBasis != newFlexBasis) {
     flexBasis = newFlexBasis
   }
 
