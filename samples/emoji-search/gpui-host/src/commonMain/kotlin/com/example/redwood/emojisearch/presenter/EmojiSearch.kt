@@ -111,7 +111,7 @@ fun EmojiSearch(
     modifier = modifier,
   ) {
     TextInput(
-      state = TextFieldState(searchTerm.text),
+      state = searchTerm,
       hint = "Search",
       onChange = { textFieldState ->
         searchTerm = textFieldState

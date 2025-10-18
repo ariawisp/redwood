@@ -14,7 +14,8 @@ import app.cash.redwood.yoga.Node
 import app.cash.redwood.yoga.Size
 import app.cash.redwood.yoga.RedwoodYogaApi
 
-private const val DEBUG_LAYOUT = true
+private const val DEBUG_LAYOUT = false
+private const val DEBUG_ZERO_MEASURE = true
 
 public class GpuiNode(
   internal val handle: RedwoodNodeHandle,
@@ -27,6 +28,8 @@ public class GpuiNode(
   internal val layoutChildren: MutableList<GpuiNode> = mutableListOf()
   internal var parent: GpuiNode? = null
   internal val debugId: String = "node@" + handle.hashCode().toString(16)
+  internal var loggedZeroMeasure: Boolean = false
+  internal var loggedZeroFrame: Boolean = false
 
   public var modifier: Modifier = Modifier
     private set
@@ -116,6 +119,32 @@ public class GpuiNode(
           "GpuiNode: measure ${gpuiNode.debugId} -> ${size.width}x${size.height} " +
             "(input w=$width($widthMode) h=$height($heightMode))",
         )
+      } else if (DEBUG_ZERO_MEASURE) {
+        val isZero = size.width == 0f || size.height == 0f
+        if (isZero && !gpuiNode.loggedZeroMeasure) {
+          println(
+            "GpuiNode: measure ZERO ${gpuiNode.debugId} -> ${size.width}x${size.height} " +
+              "(input w=$width($widthMode) h=$height($heightMode))",
+          )
+          val layoutNode = gpuiNode.layoutNode
+          val parent = gpuiNode.parent
+          println(
+            "[gpui-host][measure-zero-debug] node=${gpuiNode.debugId} flexDirection=${layoutNode.flexDirection} " +
+              "flexGrow=${layoutNode.flexGrow} flexShrink=${layoutNode.flexShrink} " +
+              "requestedWidth=${layoutNode.requestedWidth} requestedHeight=${layoutNode.requestedHeight} " +
+              "requestedMinWidth=${layoutNode.requestedMinWidth} requestedMinHeight=${layoutNode.requestedMinHeight} " +
+              "requestedMaxWidth=${layoutNode.requestedMaxWidth} requestedMaxHeight=${layoutNode.requestedMaxHeight} " +
+              "alignSelf=${layoutNode.alignSelf} children=${gpuiNode.layoutChildren.size} " +
+              "parent=${parent?.debugId} parentFlexDirection=${parent?.layoutNode?.flexDirection} " +
+              "parentHeight=${parent?.layoutNode?.height} parentWidth=${parent?.layoutNode?.width}"
+          )
+          gpuiNode.loggedZeroMeasure = true
+        } else if (!isZero && gpuiNode.loggedZeroMeasure) {
+          println(
+            "GpuiNode: measure RECOVERED ${gpuiNode.debugId} -> ${size.width}x${size.height}",
+          )
+          gpuiNode.loggedZeroMeasure = false
+        }
       }
       return Size(size.width, size.height)
     }

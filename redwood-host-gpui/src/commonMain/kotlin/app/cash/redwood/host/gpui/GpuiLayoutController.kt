@@ -3,16 +3,14 @@
 package app.cash.redwood.host.gpui
 
 import app.cash.redwood.host.gpui.LayoutFrame
-import app.cash.redwood.yoga.Size
 import app.cash.redwood.yoga.RedwoodYogaApi
+import app.cash.redwood.yoga.Size
 
 /**
  * Drives Yoga layout for a GPUI-backed Redwood surface. The controller runs synchronously on the
  * GPUI thread whenever layout is requested and keeps the Rust-side nodes updated with the latest
  * frames.
  */
-private const val DEBUG_LAYOUT = true
-
 public class GpuiLayoutController {
   private var rootNode: GpuiNode? = null
   private var viewportWidth: Float = Size.UNDEFINED
@@ -30,6 +28,9 @@ public class GpuiLayoutController {
   fun updateViewport(size: GpuiWindowSize) {
     viewportWidth = size.width
     viewportHeight = size.height
+    if (debugViewportEnabled()) {
+      println("[gpui-host][viewport] width=$viewportWidth height=$viewportHeight")
+    }
     requestLayout()
   }
 
@@ -69,10 +70,6 @@ public class GpuiLayoutController {
     val ownerWidth = viewportWidth.takeIf { it > 0f } ?: Size.UNDEFINED
     val ownerHeight = viewportHeight.takeIf { it > 0f } ?: Size.UNDEFINED
 
-    if (DEBUG_LAYOUT) {
-      println("GpuiLayoutController: layoutOnce viewport=(${ownerWidth}, ${ownerHeight})")
-    }
-
     root.layoutNode.requestedWidth = ownerWidth
     root.layoutNode.requestedMaxWidth = Size.UNDEFINED
     root.layoutNode.requestedHeight = ownerHeight
@@ -85,7 +82,6 @@ public class GpuiLayoutController {
 
   private fun applyLayoutFrames(node: GpuiNode, offsetX: Float, offsetY: Float) {
     val yogaNode = node.layoutNode
-
     if (node.shouldApplyLayoutFrame) {
       val frame = LayoutFrame(
         x = offsetX + yogaNode.left,
@@ -93,12 +89,6 @@ public class GpuiLayoutController {
         width = yogaNode.width,
         height = yogaNode.height,
       )
-      if (DEBUG_LAYOUT) {
-        println(
-          "GpuiLayoutController: set frame ${frame.width}x${frame.height}@" +
-            "(${frame.x}, ${frame.y}) for node=${node.debugId}",
-        )
-      }
       node.setLayoutFrame(frame)
     }
 
@@ -108,4 +98,15 @@ public class GpuiLayoutController {
       applyLayoutFrames(child, childOffsetX, childOffsetY)
     }
   }
+
+  private fun debugViewportEnabled(): Boolean {
+    val value = getEnv("GPUI_HOST_DEBUG_VIEWPORT") ?: return false
+    return value == "1" ||
+      value.equals("true", ignoreCase = true) ||
+      value.equals("yes", ignoreCase = true) ||
+      value.equals("on", ignoreCase = true)
+  }
 }
+
+@Suppress("NO_ACTUAL_FOR_EXPECT") // The per-platform implementations live in platform source sets.
+internal expect fun getEnv(name: String): String?

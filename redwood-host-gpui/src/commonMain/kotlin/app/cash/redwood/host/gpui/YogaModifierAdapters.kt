@@ -18,6 +18,7 @@ import app.cash.redwood.ui.Density
 import app.cash.redwood.yoga.AlignItems
 import app.cash.redwood.yoga.AlignSelf
 import app.cash.redwood.yoga.JustifyContent
+import app.cash.redwood.yoga.FlexDirection
 import app.cash.redwood.yoga.Node
 import app.cash.redwood.yoga.RedwoodYogaApi
 

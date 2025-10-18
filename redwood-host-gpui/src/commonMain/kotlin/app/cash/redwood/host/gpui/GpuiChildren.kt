@@ -3,6 +3,8 @@ package app.cash.redwood.host.gpui
 import app.cash.redwood.Modifier
 import app.cash.redwood.widget.Widget
 
+private const val DEBUG_CHILDREN = false
+
 public class GpuiChildren(
   private val environment: GpuiEnvironment,
   private val handle: RedwoodChildrenHandle,
@@ -14,6 +16,11 @@ public class GpuiChildren(
     get() = widgetsList
 
   override fun insert(index: Int, widget: Widget<GpuiNode>) {
+    if (DEBUG_CHILDREN) {
+      println(
+        "GpuiChildren: insert widget=${widget::class.simpleName} node=${widget.value.debugId} parent=${parentNode.debugId}",
+      )
+    }
     widgetsList.add(index, widget)
     parentNode.attachChild(index, widget.value)
     handle.insert(index.toUInt(), widget.value.handle)

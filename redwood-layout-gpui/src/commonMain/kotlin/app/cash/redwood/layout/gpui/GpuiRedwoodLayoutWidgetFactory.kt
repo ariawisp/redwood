@@ -9,6 +9,7 @@ import app.cash.redwood.host.gpui.GpuiNode
 import app.cash.redwood.host.gpui.RedwoodBoxNode
 import app.cash.redwood.host.gpui.RedwoodFlexNode
 import app.cash.redwood.host.gpui.RedwoodSpacerNode
+import app.cash.redwood.host.gpui.RedwoodScrollHandle
 import app.cash.redwood.host.gpui.ScrollListener
 import app.cash.redwood.host.gpui.scrollListener
 import app.cash.redwood.host.gpui.toEdgeInsets
@@ -33,6 +34,10 @@ import app.cash.redwood.yoga.JustifyContent
 import app.cash.redwood.yoga.Node
 import app.cash.redwood.yoga.RedwoodYogaApi
 
+public interface GpuiScrollHandleProvider {
+  public fun scrollHandle(): RedwoodScrollHandle?
+}
+
 public class GpuiRedwoodLayoutWidgetFactory(
   private val environment: GpuiEnvironment,
 ) : RedwoodLayoutWidgetFactory<GpuiNode> {
@@ -47,7 +52,7 @@ public class GpuiRedwoodLayoutWidgetFactory(
 
 private abstract class GpuiFlexContainer(
   protected val environment: GpuiEnvironment,
-  private val node: RedwoodFlexNode,
+  protected val node: RedwoodFlexNode,
   private val direction: FlexDirection,
 ) : Widget<GpuiNode> {
   private var widthConstraint: Constraint = Constraint.Wrap
@@ -126,10 +131,12 @@ private abstract class GpuiFlexContainer(
     when (direction) {
       FlexDirection.Row -> {
         layoutNode.flexGrow = if (widthConstraint == Constraint.Fill) 1f else 0f
+        layoutNode.flexShrink = 0f
         layoutNode.alignSelf = if (heightConstraint == Constraint.Fill) AlignSelf.Stretch else AlignSelf.Auto
       }
       FlexDirection.Column -> {
         layoutNode.flexGrow = if (heightConstraint == Constraint.Fill) 1f else 0f
+        layoutNode.flexShrink = 0f
         layoutNode.alignSelf = if (widthConstraint == Constraint.Fill) AlignSelf.Stretch else AlignSelf.Auto
       }
     }
@@ -176,7 +183,8 @@ private class GpuiRow(
 private class GpuiColumn(
   environment: GpuiEnvironment,
 ) : GpuiFlexContainer(environment, environment.surface.createColumn(), FlexDirection.Column),
-  Column<GpuiNode> {
+  Column<GpuiNode>,
+  GpuiScrollHandleProvider {
   override val children: Widget.Children<GpuiNode>
     get() = childrenContainer
 
@@ -200,6 +208,8 @@ private class GpuiColumn(
   override fun verticalAlignment(verticalAlignment: MainAxisAlignment) {
     setMainAxisAlignment(verticalAlignment)
   }
+
+  override fun scrollHandle(): RedwoodScrollHandle? = node.scrollHandle()
 }
 
 private class GpuiBox(
@@ -290,6 +300,7 @@ private class GpuiBox(
 
     layoutNode.alignSelf = if (width == Constraint.Fill) AlignSelf.Stretch else AlignSelf.Auto
     layoutNode.flexGrow = if (height == Constraint.Fill) 1f else 0f
+    layoutNode.flexShrink = 1f
 
     value.markNeedsLayout()
   }
