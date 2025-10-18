@@ -99,7 +99,17 @@ private class GpuiLazyList(
     }
 
     override fun setContent(view: RowSlot, widget: Widget<GpuiNode>?) {
-      if (widget?.let { it::class.simpleName } == "SizeOnlyPlaceholderWidget") println("[GpuiLazyList] bindings consumed placeholder at index=${view.index}"); widgetIsNull=${widget == null}")
+      val placeholder = widget?.let { it::class.simpleName == "SizeOnlyPlaceholderWidget" } == true
+      println(
+        "[GpuiLazyList] setContent index=${view.index} widgetIsNull=${widget == null} " +
+          "widgetType=${widget?.let { it::class.simpleName }} placeholder=$placeholder",
+      )
+      if (placeholder) {
+        println("[GpuiLazyList] placeholder consumed at index=${view.index}")
+      }
+      if (!placeholder && widget != null && view.index < 5) {
+        println("[GpuiLazyList] row content preview index=${view.index} widget=${widget::class.simpleName}")
+      }
       view.setContent(widget)
       updateViewportForOffset()
     }
@@ -218,12 +228,18 @@ private class GpuiLazyList(
 
       val existing = widget
       if (existing != null) {
+        println("[GpuiLazyList] removing child index=$index type=${existing::class.simpleName}")
         columnChildren.remove(index, 1)
       }
 
       widget = newWidget
 
       if (newWidget != null) {
+        println("[GpuiLazyList] inserting child index=$index type=${newWidget::class.simpleName}")
+        if (index < 5) {
+          val totalChildren = newWidget.allChildren.sumOf { it.widgets.size }
+          println("[GpuiLazyList] after insert index=$index childWidgetCount=$totalChildren")
+        }
         columnChildren.insert(index, newWidget)
       }
     }

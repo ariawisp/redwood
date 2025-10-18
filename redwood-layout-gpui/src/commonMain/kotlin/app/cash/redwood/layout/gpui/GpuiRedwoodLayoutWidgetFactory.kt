@@ -18,6 +18,9 @@ import app.cash.redwood.layout.api.Constraint
 import app.cash.redwood.layout.api.CrossAxisAlignment
 import app.cash.redwood.layout.api.MainAxisAlignment
 import app.cash.redwood.layout.api.Overflow
+import app.cash.redwood.layout.modifier.Flex as FlexModifier
+import app.cash.redwood.layout.modifier.Grow as GrowModifier
+import app.cash.redwood.layout.modifier.Shrink as ShrinkModifier
 import app.cash.redwood.layout.widget.Box
 import app.cash.redwood.layout.widget.Column
 import app.cash.redwood.layout.widget.RedwoodLayoutWidgetFactory
@@ -83,6 +86,7 @@ private abstract class GpuiFlexContainer(
   open fun width(width: Constraint) {
     if (widthConstraint != width) {
       widthConstraint = width
+      value.wantsFillWidth = width == Constraint.Fill
       applyConstraints()
     }
   }
@@ -90,6 +94,7 @@ private abstract class GpuiFlexContainer(
   open fun height(height: Constraint) {
     if (heightConstraint != height) {
       heightConstraint = height
+      value.wantsFillHeight = height == Constraint.Fill
       applyConstraints()
     }
   }
@@ -128,18 +133,64 @@ private abstract class GpuiFlexContainer(
   }
 
   private fun updateLayoutSizing() {
+    val hasGrowModifier = hasGrowModifier()
+    val hasShrinkModifier = hasShrinkModifier()
     when (direction) {
       FlexDirection.Row -> {
-        layoutNode.flexGrow = if (widthConstraint == Constraint.Fill) 1f else 0f
-        layoutNode.flexShrink = 0f
+        if (!hasGrowModifier) {
+          layoutNode.flexGrow = if (widthConstraint == Constraint.Fill) 1f else 0f
+        }
+        if (!hasShrinkModifier) {
+          layoutNode.flexShrink = 0f
+        }
         layoutNode.alignSelf = if (heightConstraint == Constraint.Fill) AlignSelf.Stretch else AlignSelf.Auto
       }
       FlexDirection.Column -> {
-        layoutNode.flexGrow = if (heightConstraint == Constraint.Fill) 1f else 0f
-        layoutNode.flexShrink = 0f
+        if (!hasGrowModifier) {
+          layoutNode.flexGrow = if (heightConstraint == Constraint.Fill) 1f else 0f
+        }
+        if (!hasShrinkModifier) {
+          layoutNode.flexShrink = 0f
+        }
         layoutNode.alignSelf = if (widthConstraint == Constraint.Fill) AlignSelf.Stretch else AlignSelf.Auto
       }
     }
+  }
+
+  private fun hasGrowModifier(): Boolean {
+    var found = false
+    value.modifier.forEachScoped { modifier ->
+      if (found) return@forEachScoped
+      when (modifier) {
+        is FlexModifier -> if (modifier.value > 0.0) {
+          found = true
+          return@forEachScoped
+        }
+        is GrowModifier -> if (modifier.value > 0.0) {
+          found = true
+          return@forEachScoped
+        }
+      }
+    }
+    return found
+  }
+
+  private fun hasShrinkModifier(): Boolean {
+    var found = false
+    value.modifier.forEachScoped { modifier ->
+      if (found) return@forEachScoped
+      when (modifier) {
+        is FlexModifier -> if (modifier.value > 0.0) {
+          found = true
+          return@forEachScoped
+        }
+        is ShrinkModifier -> if (modifier.value > 0.0) {
+          found = true
+          return@forEachScoped
+        }
+      }
+    }
+    return found
   }
 
   private fun applyLayoutMargin(margin: Margin) {
@@ -252,11 +303,13 @@ private class GpuiBox(
 
   override fun width(width: Constraint) {
     widthConstraint = width
+    value.wantsFillWidth = width == Constraint.Fill
     applyConstraints()
   }
 
   override fun height(height: Constraint) {
     heightConstraint = height
+    value.wantsFillHeight = height == Constraint.Fill
     applyConstraints()
   }
 

@@ -31,6 +31,12 @@ public class GpuiChildren(
   override fun move(fromIndex: Int, toIndex: Int, count: Int) {
     if (count == 0 || fromIndex == toIndex) return
 
+    if (DEBUG_CHILDREN) {
+      println(
+        "GpuiChildren: move parent=${parentNode.debugId} from=$fromIndex to=$toIndex count=$count",
+      )
+    }
+
     handle.moveRange(fromIndex.toUInt(), toIndex.toUInt(), count.toUInt())
 
     val movingWidgets = widgetsList.subList(fromIndex, fromIndex + count).toList()
@@ -54,6 +60,12 @@ public class GpuiChildren(
   override fun remove(index: Int, count: Int) {
     if (count == 0) return
 
+    if (DEBUG_CHILDREN) {
+      println(
+        "GpuiChildren: remove parent=${parentNode.debugId} index=$index count=$count",
+      )
+    }
+
     handle.remove(index.toUInt(), count.toUInt())
     repeat(count) {
       val removedWidget = widgetsList.removeAt(index)
@@ -68,6 +80,9 @@ public class GpuiChildren(
   }
 
   override fun detach() {
+    if (DEBUG_CHILDREN) {
+      println("GpuiChildren: detach parent=${parentNode.debugId}")
+    }
     handle.detach()
     while (parentNode.layoutChildren.isNotEmpty()) {
       parentNode.detachChild(parentNode.layoutChildren.lastIndex).dispose()

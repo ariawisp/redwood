@@ -8,11 +8,13 @@ import app.cash.redwood.host.gpui.MeasureInput
 import app.cash.redwood.host.gpui.MeasureMode as HostMeasureMode
 import app.cash.redwood.host.gpui.SizeF
 import app.cash.redwood.ui.Density
+import app.cash.redwood.layout.modifier.Flex as FlexModifier
 import app.cash.redwood.yoga.MeasureCallback
 import app.cash.redwood.yoga.MeasureMode as YogaMeasureMode
 import app.cash.redwood.yoga.Node
 import app.cash.redwood.yoga.Size
 import app.cash.redwood.yoga.RedwoodYogaApi
+import app.cash.redwood.yoga.FlexDirection
 
 private const val DEBUG_LAYOUT = false
 private const val DEBUG_ZERO_MEASURE = true
@@ -30,6 +32,10 @@ public class GpuiNode(
   internal val debugId: String = "node@" + handle.hashCode().toString(16)
   internal var loggedZeroMeasure: Boolean = false
   internal var loggedZeroFrame: Boolean = false
+  public var wantsFillWidth: Boolean = false
+  public var wantsFillHeight: Boolean = false
+  private var loggedFrameZero: Boolean = false
+  private var loggedFramePositive: Boolean = false
 
   public var modifier: Modifier = Modifier
     private set
@@ -61,6 +67,18 @@ public class GpuiNode(
 
   public fun applyModifier(modifier: Modifier, density: Density) {
     this.modifier = modifier
+    val parentDirection = parent?.layoutNode?.flexDirection
+    if (parentDirection != null) {
+      modifier.forEachScoped { element ->
+        if (element is FlexModifier && element.value > 0.0) {
+          when (parentDirection) {
+            FlexDirection.Column -> wantsFillHeight = true
+            FlexDirection.Row -> wantsFillWidth = true
+            else -> Unit
+          }
+        }
+      }
+    }
     layoutNode.applyModifier(modifier, density)
     markNeedsLayout()
   }
@@ -94,6 +112,7 @@ public class GpuiNode(
     runCatching {
       handle.setLayoutFrame(frame)
     }
+    maybeLogFrame(frame)
   }
 
   public fun measuredWidth(): Float = layoutNode.width
@@ -156,6 +175,29 @@ public class GpuiNode(
 
   private companion object {
     private val ZERO_SIZE = Size(0f, 0f)
+    private const val MaxLoggedFrames = 60
+    private var loggedFramesCount: Int = 0
+  }
+
+  private fun maybeLogFrame(frame: LayoutFrame) {
+    if ((loggedFrameZero && loggedFramePositive) || loggedFramesCount >= MaxLoggedFrames) return
+    val isPositive = frame.width > 0f && frame.height > 0f
+    val shouldLog = when {
+      isPositive && !loggedFramePositive -> true
+      !isPositive && !loggedFrameZero -> true
+      else -> false
+    }
+    if (shouldLog && loggedFramesCount < MaxLoggedFrames) {
+      println(
+        "[gpui-host][frame] $debugId -> ${frame.width}x${frame.height} at (${frame.x}, ${frame.y})",
+      )
+      if (isPositive) {
+        loggedFramePositive = true
+      } else {
+        loggedFrameZero = true
+      }
+      loggedFramesCount += 1
+    }
   }
 }
 
