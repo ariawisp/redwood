@@ -34,8 +34,6 @@ public class GpuiLayoutController {
   private var pendingLayout: Boolean = false
   private var layoutInProgress: Boolean = false
   private var treeDirty: Boolean = true
-  private var loggedViewport: Boolean = false
-  private var loggedRootMeasurement: Boolean = false
 
   fun attachRoot(root: GpuiNode) {
     rootNode = root
@@ -45,12 +43,7 @@ public class GpuiLayoutController {
   fun updateViewport(size: GpuiWindowSize) {
     viewportWidth = size.width
     viewportHeight = size.height
-    if (!loggedViewport && (viewportWidth > 0f || viewportHeight > 0f)) {
-      println("[gpui-host][viewport] first non-zero viewport=${viewportWidth}x$viewportHeight")
-      loggedViewport = true
-    } else if (debugViewportEnabled()) {
-      println("[gpui-host][viewport] width=$viewportWidth height=$viewportHeight")
-    }
+    // No-op: we previously logged the first non-zero viewport; collapse to a simple assignment.
     requestLayout()
   }
 
@@ -96,13 +89,6 @@ public class GpuiLayoutController {
     root.layoutNode.requestedMaxHeight = Size.UNDEFINED
 
     root.layoutNode.measureOnly(ownerWidth, ownerHeight)
-    if (!loggedRootMeasurement) {
-      println(
-        "[gpui-host][layout] root measured width=${root.layoutNode.width} height=${root.layoutNode.height} " +
-          "ownerWidth=$ownerWidth ownerHeight=$ownerHeight",
-      )
-      loggedRootMeasurement = true
-    }
 
     applyLayoutFrames(root, 0f, 0f, ownerWidth, ownerHeight)
   }
