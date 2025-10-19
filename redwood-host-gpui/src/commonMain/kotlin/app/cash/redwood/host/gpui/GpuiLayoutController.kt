@@ -139,8 +139,8 @@ public class GpuiLayoutController {
       }
 
       val frame = LayoutFrame(
-        x = offsetX + yogaNode.left,
-        y = offsetY + yogaNode.top,
+        x = yogaNode.left,
+        y = yogaNode.top,
         width = width,
         height = height,
       )
