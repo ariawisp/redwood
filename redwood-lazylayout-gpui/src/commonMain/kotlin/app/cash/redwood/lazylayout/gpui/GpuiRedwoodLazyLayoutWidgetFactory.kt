@@ -17,6 +17,7 @@ import app.cash.redwood.lazylayout.widget.LazyListUpdateProcessor.Binding
 import app.cash.redwood.lazylayout.widget.RedwoodLazyLayoutWidgetFactory
 import app.cash.redwood.lazylayout.widget.RefreshableLazyList
 import app.cash.redwood.ui.Margin
+import app.cash.redwood.ui.dp
 import app.cash.redwood.widget.ChangeListener
 import app.cash.redwood.widget.Widget
 
@@ -37,10 +38,21 @@ private class GpuiLazyList(
     overflow(Overflow.Scroll)
     height(Constraint.Fill)
   }
+  private val topSpacer = layoutFactory.Spacer()
+  private val bottomSpacer = layoutFactory.Spacer()
   private val columnChildren = column.children
   private val rowSlots = mutableListOf<RowSlot>()
   private val scrollHandleProvider = column as? GpuiScrollHandleProvider
   private var scrollHandle: RedwoodScrollHandle? = null
+  private var topOffsetPx = 0f
+  private var bottomOffsetPx = 0f
+
+  init {
+    columnChildren.insert(0, topSpacer)
+    columnChildren.insert(1, bottomSpacer)
+    topSpacer.height(0.dp)
+    bottomSpacer.height(0.dp)
+  }
 
   override var modifier: Modifier
     get() = column.modifier
@@ -85,13 +97,7 @@ private class GpuiLazyList(
       for (offset in count - 1 downTo 0) {
         val slotIndex = index + offset
         val slot = rowSlots.removeAt(slotIndex)
-        val binding = slot.binding
-        if (binding != null) {
-          binding.unbind()
-          slot.binding = null
-        } else {
-          slot.detach()
-        }
+        slot.onRemove()
       }
       reindex(startIndex = index)
       // Defer viewport update until end of changes or scroll event to avoid thrash.
@@ -113,6 +119,7 @@ private class GpuiLazyList(
     override fun detach() {
       rowSlots.forEach { it.detach() }
       rowSlots.clear()
+      resetOffsets()
       scrollHandle = null
     }
   }
@@ -125,7 +132,7 @@ private class GpuiLazyList(
     override fun contentSize(): Int = processor.size
 
     override fun programmaticScroll(firstIndex: Int, animated: Boolean) {
-      ensureScrollHandle()?.scrollToTopOfItem(firstIndex.toUInt())
+      ensureScrollHandle()?.scrollToTopOfItem((firstIndex + 1).toUInt())
     }
   }
 
@@ -196,16 +203,37 @@ private class GpuiLazyList(
     }
   }
 
+  private fun adjustTopOffset(deltaPx: Float) {
+    if (deltaPx == 0f) return
+    topOffsetPx = (topOffsetPx + deltaPx).coerceAtLeast(0f)
+    val heightDp = environment.density.run { topOffsetPx.toDp() }
+    topSpacer.height(heightDp)
+  }
+
+  private fun adjustBottomOffset(deltaPx: Float) {
+    if (deltaPx == 0f) return
+    bottomOffsetPx = (bottomOffsetPx + deltaPx).coerceAtLeast(0f)
+    val heightDp = environment.density.run { bottomOffsetPx.toDp() }
+    bottomSpacer.height(heightDp)
+  }
+
+  private fun resetOffsets() {
+    topOffsetPx = 0f
+    bottomOffsetPx = 0f
+    topSpacer.height(0.dp)
+    bottomSpacer.height(0.dp)
+  }
+
   private fun updateViewportForOffset() {
     val handle = ensureScrollHandle() ?: return
     if (rowSlots.isEmpty()) return
 
-    val childrenCount = handle.childrenCount().toInt().coerceAtLeast(0)
     val targetVisible = 12
+    val mountedRowCount = rowSlots.count { it.hasWidget() }
 
     // Bootstrap: if no children are mounted yet, bind an initial small window
     // so the loading strategy can stabilize and promote content.
-    if (childrenCount == 0) {
+    if (mountedRowCount == 0) {
       val maxIndex = (processor.size - 1).coerceAtLeast(0)
       val lastToBind = minOf(targetVisible - 1, maxIndex)
       bindVisibleRange(0, lastToBind)
@@ -213,8 +241,11 @@ private class GpuiLazyList(
       return
     }
 
-    val firstChild = handle.topIndex().toInt().coerceIn(0, childrenCount - 1)
-    val lastChild = handle.bottomIndex().toInt().coerceIn(firstChild, childrenCount - 1)
+    val firstChildRaw = handle.topIndex().toInt()
+    val lastChildRaw = handle.bottomIndex().toInt()
+    val maxRowIndex = (mountedRowCount - 1).coerceAtLeast(0)
+    val firstChild = (firstChildRaw - 1).coerceIn(0, maxRowIndex)
+    val lastChild = (lastChildRaw - 1).coerceIn(firstChild, maxRowIndex)
 
     // Map visible child indices back to dataset indices.
     var datasetFirst = -1
@@ -250,71 +281,151 @@ private class GpuiLazyList(
     val safeFirst = first.coerceAtLeast(0)
     val safeLast = last.coerceAtLeast(safeFirst).coerceAtMost(rowSlots.lastIndex)
 
-    // Unbind anything outside the desired range.
     for (i in 0 until rowSlots.size) {
-      if (i < safeFirst || i > safeLast) {
-        val binding = rowSlots[i].binding
-        if (binding?.isBound == true) {
-          binding.unbind()
-          rowSlots[i].detach()
-          rowSlots[i].binding = null
-        }
+      val slot = rowSlots[i]
+      when {
+        i < safeFirst -> slot.moveOffscreenBefore()
+        i > safeLast -> slot.moveOffscreenAfter()
       }
     }
 
-    // Bind everything in the desired range.
+    if (safeFirst > safeLast) {
+      return
+    }
+
     for (i in safeFirst..safeLast) {
       val slot = rowSlots[i]
+      slot.prepareForAttach()
       val binding = slot.binding
-      if (binding?.isBound != true) {
-        slot.binding = processor.bind(i, slot)
-      }
+      if (binding?.isBound == true) continue
+      slot.binding = processor.bind(i, slot)
     }
   }
 
-    private inner class RowSlot(
-      index: Int,
-    ) {
-      var index: Int = index
-      var binding: Binding<RowSlot, GpuiNode>? = null
-      private var widget: Widget<GpuiNode>? = null
+  private enum class SlotLocation {
+    Attached,
+    OffscreenBefore,
+    OffscreenAfter,
+  }
 
-      fun hasWidget(): Boolean = widget != null
+  private inner class RowSlot(
+    index: Int,
+  ) {
+    var index: Int = index
+    var binding: Binding<RowSlot, GpuiNode>? = null
+    private var widget: Widget<GpuiNode>? = null
+    var cachedHeightPx: Float = 0f
+      private set
+    var location: SlotLocation = SlotLocation.Attached
+      private set
 
-      private fun childIndex(): Int {
-        var count = 0
-        for (i in 0 until index) {
-          if (rowSlots[i].widget != null) count++
+    fun hasWidget(): Boolean = widget != null
+
+    fun moveOffscreenBefore() {
+      if (location == SlotLocation.OffscreenBefore) return
+      val capturedHeight = captureHeightPx()
+      when (location) {
+        SlotLocation.OffscreenAfter -> adjustBottomOffset(-cachedHeightPx)
+        SlotLocation.Attached -> {
+          val existingBinding = binding
+          if (existingBinding?.isBound == true) {
+            existingBinding.unbind()
+          }
+          detach()
         }
-        return count
+        SlotLocation.OffscreenBefore -> Unit
       }
+      cachedHeightPx = capturedHeight
+      adjustTopOffset(cachedHeightPx)
+      location = SlotLocation.OffscreenBefore
+    }
 
-      fun setContent(newWidget: Widget<GpuiNode>?) {
-        if (widget === newWidget) return
-
-        val existing = widget
-        if (existing != null) {
-          val ci = childIndex()
-          columnChildren.remove(ci, 1)
+    fun moveOffscreenAfter() {
+      if (location == SlotLocation.OffscreenAfter) return
+      val capturedHeight = captureHeightPx()
+      when (location) {
+        SlotLocation.OffscreenBefore -> adjustTopOffset(-cachedHeightPx)
+        SlotLocation.Attached -> {
+          val existingBinding = binding
+          if (existingBinding?.isBound == true) {
+            existingBinding.unbind()
+          }
+          detach()
         }
+        SlotLocation.OffscreenAfter -> Unit
+      }
+      cachedHeightPx = capturedHeight
+      adjustBottomOffset(cachedHeightPx)
+      location = SlotLocation.OffscreenAfter
+    }
 
-        widget = newWidget
+    fun prepareForAttach() {
+      when (location) {
+        SlotLocation.Attached -> return
+        SlotLocation.OffscreenBefore -> adjustTopOffset(-cachedHeightPx)
+        SlotLocation.OffscreenAfter -> adjustBottomOffset(-cachedHeightPx)
+      }
+      cachedHeightPx = 0f
+      location = SlotLocation.Attached
+    }
 
-        if (newWidget != null) {
-          val ci = childIndex()
-          columnChildren.insert(ci, newWidget)
+    fun onRemove() {
+      when (location) {
+        SlotLocation.OffscreenBefore -> adjustTopOffset(-cachedHeightPx)
+        SlotLocation.OffscreenAfter -> adjustBottomOffset(-cachedHeightPx)
+        SlotLocation.Attached -> {
+          val existingBinding = binding
+          if (existingBinding?.isBound == true) {
+            existingBinding.unbind()
+          }
         }
       }
+      detach()
+    }
 
-      fun detach() {
-        if (widget != null) {
-          val ci = childIndex()
-          columnChildren.remove(ci, 1)
-        }
-        widget = null
-        binding = null
+    private fun captureHeightPx(): Float {
+      val measured = widget?.value?.measuredHeight()
+      return if (measured != null && measured.isFinite() && measured > 0f) {
+        measured
+      } else {
+        cachedHeightPx
       }
     }
+
+    private fun childIndex(): Int {
+      var count = 0
+      for (i in 0 until index) {
+        if (rowSlots[i].widget != null) count++
+      }
+      return 1 + count
+    }
+
+    fun setContent(newWidget: Widget<GpuiNode>?) {
+      if (widget === newWidget) return
+
+      val existing = widget
+      if (existing != null) {
+        val ci = childIndex()
+        columnChildren.remove(ci, 1)
+      }
+
+      widget = newWidget
+
+      if (newWidget != null) {
+        val ci = childIndex()
+        columnChildren.insert(ci, newWidget)
+      }
+    }
+
+    fun detach() {
+      if (widget != null) {
+        val ci = childIndex()
+        columnChildren.remove(ci, 1)
+      }
+      widget = null
+      binding = null
+    }
+  }
 }
 
 private class GpuiRefreshableLazyList(
