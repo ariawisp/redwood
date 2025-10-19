@@ -101,12 +101,10 @@ private class GpuiButton(
     val handler = onClick?.let { callback ->
       object : ButtonClickHandler {
         override fun onClick() {
-          println("[GpuiRedwoodUiBasic] button handler invoked")
           callback()
         }
       }
     }
-    println("[GpuiRedwoodUiBasic] button handler registered: ${handler != null}")
     clickHandler = handler
     node.setOnClick(handler)
   }
