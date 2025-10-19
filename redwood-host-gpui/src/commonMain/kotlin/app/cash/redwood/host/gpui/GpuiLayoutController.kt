@@ -119,18 +119,22 @@ public class GpuiLayoutController {
     var height = yogaNode.height
 
     if (node.shouldApplyLayoutFrame) {
-      if (node.wantsFillWidth && width <= 0f) {
+      if (node.wantsFillWidth) {
         val fallbackWidth = parentWidth?.takeIf { it > 0f } ?: viewportWidth.takeIf { it > 0f }
         if (fallbackWidth != null) {
           val available = max(fallbackWidth - yogaNode.left, 0f)
-          width = max(width, available)
+          if (available > 0f && width < available) {
+            width = available
+          }
         }
       }
-      if (node.wantsFillHeight && height <= 0f) {
+      if (node.wantsFillHeight) {
         val fallbackHeight = parentHeight?.takeIf { it > 0f } ?: viewportHeight.takeIf { it > 0f }
         if (fallbackHeight != null) {
           val available = max(fallbackHeight - yogaNode.top, 0f)
-          height = max(height, available)
+          if (available > 0f && height < available) {
+            height = available
+          }
         }
       }
 
