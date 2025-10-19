@@ -81,6 +81,8 @@ public class GpuiNode(
     return onRequestFocus?.invoke() == true
   }
 
+  public fun rawNode(): RedwoodNodeHandle = handle
+
   private fun applyStyleModifiers(modifier: Modifier, density: Density) {
     val translators = environment?.modifierTranslators ?: return
     if (translators.isEmpty()) return

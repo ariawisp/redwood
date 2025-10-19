@@ -154,6 +154,8 @@ public class GpuiSurface internal constructor(
   public fun createButton(): RedwoodButtonNode = handle.createButton()
   public fun createImage(): RedwoodImageNode = handle.createImage()
   public fun createTextInput(): RedwoodTextInputNode = handle.createTextInput()
+  public fun createUniformList(): RedwoodUniformListNode = handle.createUniformList()
+  public fun createList(): RedwoodListNode = handle.createList()
 }
 
 public fun runGpuiApp(
