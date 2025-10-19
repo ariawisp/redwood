@@ -26,6 +26,7 @@ public class GpuiRedwoodView internal constructor(
     layoutNode = Node().apply { flexDirection = FlexDirection.Column },
     shouldApplyLayoutFrame = false,
     measureSelf = false,
+    environment = environment,
   )
   private val rootChildren = environment.surface.rootChildren(environment, rootNode)
 
@@ -44,7 +45,7 @@ public class GpuiRedwoodView internal constructor(
     environment.surface.layoutController = environment.layoutController
     environment.layoutController.attachRoot(rootNode)
     environment.theme?.backgroundColor?.let { color ->
-      rootNode.handle.setBackgroundColor(color.toULong().toUInt())
+      rootNode.handle.setBackgroundColor(color.toGpuiColor())
     }
   }
 
@@ -128,7 +129,8 @@ public fun GpuiApp.createRedwoodView(
   val surface = window.createSurface()
   val layoutController = GpuiLayoutController()
   surface.layoutController = layoutController
-  val environment = GpuiEnvironment(surface, density, layoutController, theme, textInputKeyBindings)
+  val resolvedTheme = theme ?: GpuiTheme()
+  val environment = GpuiEnvironment(surface, density, layoutController, resolvedTheme, textInputKeyBindings)
   textInputKeyBindings?.let(::configureTextInputKeyBindings)
   val view = GpuiRedwoodView(window, environment)
   redwoodView = view

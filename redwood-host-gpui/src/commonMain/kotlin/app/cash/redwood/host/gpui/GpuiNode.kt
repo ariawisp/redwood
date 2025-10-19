@@ -26,6 +26,7 @@ public class GpuiNode(
   internal val shouldApplyLayoutFrame: Boolean = true,
   private val measureSelf: Boolean = true,
   private val onRequestFocus: (() -> Boolean)? = null,
+  private val environment: GpuiEnvironment? = null,
 ) {
   internal val layoutChildren: MutableList<GpuiNode> = mutableListOf()
   internal var parent: GpuiNode? = null
@@ -65,6 +66,25 @@ public class GpuiNode(
     return onRequestFocus?.invoke() == true
   }
 
+  private fun applyStyleModifiers(modifier: Modifier, density: Density) {
+    val translators = environment?.modifierTranslators ?: return
+    if (translators.isEmpty()) return
+
+    val style = MutableGpuiModifierStyle()
+    modifier.forEach { element ->
+      translators.forEach { translator ->
+        translator.translate(element, density, style)
+      }
+    }
+
+    if (style.hasBackgroundUpdate) {
+      handle.setBackgroundColor(style.backgroundColor)
+    }
+    if (style.hasPaddingUpdate) {
+      handle.setPadding(style.padding)
+    }
+  }
+
   public fun applyModifier(modifier: Modifier, density: Density) {
     this.modifier = modifier
     val parentDirection = parent?.layoutNode?.flexDirection
@@ -80,6 +100,7 @@ public class GpuiNode(
       }
     }
     layoutNode.applyModifier(modifier, density)
+    applyStyleModifiers(modifier, density)
     markNeedsLayout()
   }
 

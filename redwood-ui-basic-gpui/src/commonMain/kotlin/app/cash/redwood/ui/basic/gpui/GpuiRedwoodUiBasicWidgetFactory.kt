@@ -1,13 +1,14 @@
 package app.cash.redwood.ui.basic.gpui
 
 import app.cash.redwood.Modifier
+import app.cash.redwood.host.gpui.ButtonClickHandler
 import app.cash.redwood.host.gpui.GpuiEnvironment
 import app.cash.redwood.host.gpui.GpuiNode
+import app.cash.redwood.host.gpui.ImageClickHandler
 import app.cash.redwood.host.gpui.TextChangeHandler
 import app.cash.redwood.host.gpui.TextFieldStateFfi
-import app.cash.redwood.host.gpui.ButtonClickHandler
-import app.cash.redwood.host.gpui.ImageClickHandler
 import app.cash.redwood.host.gpui.toFfi
+import app.cash.redwood.host.gpui.toGpuiColor
 import app.cash.redwood.host.gpui.toRedwood
 import app.cash.redwood.ui.basic.api.TextFieldState
 import app.cash.redwood.ui.basic.modifier.Reuse
@@ -40,13 +41,14 @@ private class GpuiText(
   private val node = environment.surface.createText()
   init {
     environment.theme?.textColor?.let { color ->
-      node.setTextColor(color.toULong().toUInt())
+      node.setTextColor(color.toGpuiColor())
     }
   }
 
   override val value: GpuiNode = GpuiNode(
     handle = node.rawNode(),
     layoutController = environment.layoutController,
+    environment = environment,
   )
 
   override val allChildren: List<Widget.Children<GpuiNode>> = emptyList()
@@ -68,7 +70,7 @@ private class GpuiButton(
   private val node = environment.surface.createButton()
   init {
     val color = environment.theme?.buttonTextColor ?: environment.theme?.textColor
-    color?.let { node.setTextColor(it.toULong().toUInt()) }
+    color?.let { node.setTextColor(it.toGpuiColor()) }
   }
 
   private var clickHandler: ButtonClickHandler? = null
@@ -76,6 +78,7 @@ private class GpuiButton(
   override val value: GpuiNode = GpuiNode(
     handle = node.rawNode(),
     layoutController = environment.layoutController,
+    environment = environment,
   )
 
   override val allChildren: List<Widget.Children<GpuiNode>> = emptyList()
@@ -119,6 +122,7 @@ private class GpuiImage(
   override val value: GpuiNode = GpuiNode(
     handle = node.rawNode(),
     layoutController = environment.layoutController,
+    environment = environment,
   )
 
   override val allChildren: List<Widget.Children<GpuiNode>> = emptyList()
@@ -162,6 +166,7 @@ private class GpuiTextInput(
     onRequestFocus = {
       runCatching { node.requestFocus() }.isSuccess
     },
+    environment = environment,
   )
 
   override val allChildren: List<Widget.Children<GpuiNode>> = emptyList()

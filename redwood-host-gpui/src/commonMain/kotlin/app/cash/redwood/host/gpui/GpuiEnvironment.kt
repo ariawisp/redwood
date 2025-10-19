@@ -12,4 +12,5 @@ public data class GpuiEnvironment(
   val layoutController: GpuiLayoutController,
   val theme: GpuiTheme? = null,
   val textInputKeyBindings: List<GpuiTextInputKeyBinding>? = null,
+  val modifierTranslators: List<GpuiModifierTranslator> = emptyList(),
 )

@@ -71,6 +71,7 @@ private abstract class GpuiFlexContainer(
     layoutController = environment.layoutController,
     layoutNode = layoutNode,
     measureSelf = false,
+    environment = environment,
   )
 
   protected val childrenContainer = GpuiChildren(environment, node.children(), value)
@@ -286,6 +287,7 @@ private class GpuiBox(
     layoutController = environment.layoutController,
     layoutNode = layoutNode,
     measureSelf = false,
+    environment = environment,
   )
 
   private val _children = GpuiChildren(environment, node.children(), value)
@@ -371,6 +373,7 @@ private class GpuiSpacer(
   override val value: GpuiNode = GpuiNode(
     handle = node.rawNode(),
     layoutController = environment.layoutController,
+    environment = environment,
   )
 
   override val allChildren: List<Widget.Children<GpuiNode>> = emptyList()
