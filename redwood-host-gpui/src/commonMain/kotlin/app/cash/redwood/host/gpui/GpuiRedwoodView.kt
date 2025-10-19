@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2025 Square, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package app.cash.redwood.host.gpui
 
 import app.cash.redwood.ui.Cancellable
@@ -11,10 +26,10 @@ import app.cash.redwood.ui.UiConfiguration
 import app.cash.redwood.widget.RedwoodView
 import app.cash.redwood.widget.SavedStateRegistry
 import app.cash.redwood.widget.Widget
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import app.cash.redwood.yoga.FlexDirection
 import app.cash.redwood.yoga.Node
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 public class GpuiRedwoodView internal constructor(
   public val window: GpuiWindow,
@@ -102,6 +117,7 @@ public fun GpuiApp.createRedwoodView(
   density: Density = Density(1.0),
   theme: GpuiTheme? = null,
   textInputKeyBindings: List<GpuiTextInputKeyBinding>? = null,
+  modifierTranslators: List<GpuiModifierTranslator> = emptyList(),
   delegate: GpuiWindowEvents? = null,
 ): GpuiRedwoodView {
   var pendingViewport: GpuiWindowSize? = null
@@ -130,7 +146,14 @@ public fun GpuiApp.createRedwoodView(
   val layoutController = GpuiLayoutController()
   surface.layoutController = layoutController
   val resolvedTheme = theme ?: GpuiTheme()
-  val environment = GpuiEnvironment(surface, density, layoutController, resolvedTheme, textInputKeyBindings)
+  val environment = GpuiEnvironment(
+    surface = surface,
+    density = density,
+    layoutController = layoutController,
+    theme = resolvedTheme,
+    textInputKeyBindings = textInputKeyBindings,
+    modifierTranslators = modifierTranslators,
+  )
   textInputKeyBindings?.let(::configureTextInputKeyBindings)
   val view = GpuiRedwoodView(window, environment)
   redwoodView = view

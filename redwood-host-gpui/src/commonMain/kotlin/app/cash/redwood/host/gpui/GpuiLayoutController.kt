@@ -1,8 +1,22 @@
+/*
+ * Copyright (C) 2025 Square, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 @file:OptIn(RedwoodYogaApi::class)
 
 package app.cash.redwood.host.gpui
 
-import app.cash.redwood.host.gpui.LayoutFrame
 import app.cash.redwood.yoga.RedwoodYogaApi
 import app.cash.redwood.yoga.Size
 import kotlin.math.max
@@ -32,7 +46,7 @@ public class GpuiLayoutController {
     viewportWidth = size.width
     viewportHeight = size.height
     if (!loggedViewport && (viewportWidth > 0f || viewportHeight > 0f)) {
-      println("[gpui-host][viewport] first non-zero viewport=${viewportWidth}x${viewportHeight}")
+      println("[gpui-host][viewport] first non-zero viewport=${viewportWidth}x$viewportHeight")
       loggedViewport = true
     } else if (debugViewportEnabled()) {
       println("[gpui-host][viewport] width=$viewportWidth height=$viewportHeight")

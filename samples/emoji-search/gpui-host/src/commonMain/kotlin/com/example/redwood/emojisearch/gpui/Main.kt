@@ -3,6 +3,7 @@ package com.example.redwood.emojisearch.gpui
 import app.cash.redwood.host.gpui.GpuiApp
 import app.cash.redwood.host.gpui.GpuiAppDelegate
 import app.cash.redwood.host.gpui.GpuiAppOptions
+import app.cash.redwood.host.gpui.GpuiModifierTranslator
 import app.cash.redwood.host.gpui.GpuiRedwoodView
 import app.cash.redwood.host.gpui.GpuiTheme
 import app.cash.redwood.host.gpui.GpuiWindowConfig
@@ -46,6 +47,11 @@ private fun launchEmojiSearch(app: GpuiApp) {
       decorated = true,
     ),
     theme = GpuiTheme(),
+    modifierTranslators = listOf(
+      GpuiModifierTranslator { _, _, style ->
+        style.setBackgroundColor(0xFFEEEEFFu)
+      },
+    ),
     delegate = object : GpuiWindowEvents {
       override fun closeRequested(): Boolean {
         scope.cancel()
