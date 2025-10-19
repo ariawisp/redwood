@@ -31,11 +31,6 @@ public class GpuiChildren(
     get() = widgetsList
 
   override fun insert(index: Int, widget: Widget<GpuiNode>) {
-    if (DEBUG_CHILDREN) {
-      println(
-        "GpuiChildren: insert widget=${widget::class.simpleName} node=${widget.value.debugId} parent=${parentNode.debugId}",
-      )
-    }
     widgetsList.add(index, widget)
     parentNode.attachChild(index, widget.value)
     handle.insert(index.toUInt(), widget.value.handle)
@@ -45,12 +40,6 @@ public class GpuiChildren(
 
   override fun move(fromIndex: Int, toIndex: Int, count: Int) {
     if (count == 0 || fromIndex == toIndex) return
-
-    if (DEBUG_CHILDREN) {
-      println(
-        "GpuiChildren: move parent=${parentNode.debugId} from=$fromIndex to=$toIndex count=$count",
-      )
-    }
 
     handle.moveRange(fromIndex.toUInt(), toIndex.toUInt(), count.toUInt())
 
@@ -75,12 +64,6 @@ public class GpuiChildren(
   override fun remove(index: Int, count: Int) {
     if (count == 0) return
 
-    if (DEBUG_CHILDREN) {
-      println(
-        "GpuiChildren: remove parent=${parentNode.debugId} index=$index count=$count",
-      )
-    }
-
     handle.remove(index.toUInt(), count.toUInt())
     repeat(count) {
       widgetsList.removeAt(index)
@@ -97,9 +80,6 @@ public class GpuiChildren(
   }
 
   override fun detach() {
-    if (DEBUG_CHILDREN) {
-      println("GpuiChildren: detach parent=${parentNode.debugId}")
-    }
     handle.detach()
     while (parentNode.layoutChildren.isNotEmpty()) {
       parentNode.detachChild(parentNode.layoutChildren.lastIndex).dispose()
