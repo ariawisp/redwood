@@ -267,6 +267,7 @@ private class GpuiLazyList(
       if (i < safeFirst || i > safeLast) {
         val binding = rowSlots[i].binding
         if (binding?.isBound == true) {
+          println("[GpuiLazyList][debug] unbinding index=$i")
           binding.unbind()
           rowSlots[i].detach()
           rowSlots[i].binding = null
@@ -279,9 +280,11 @@ private class GpuiLazyList(
       val slot = rowSlots[i]
       val binding = slot.binding
       if (binding?.isBound != true) {
+        println("[GpuiLazyList][debug] binding index=$i")
         slot.binding = processor.bind(i, slot)
       }
     }
+    println("[GpuiLazyList][debug] bindVisibleRange first=$safeFirst last=$safeLast")
   }
 
     private inner class RowSlot(
