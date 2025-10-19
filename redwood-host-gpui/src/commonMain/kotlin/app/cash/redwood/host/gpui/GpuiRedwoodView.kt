@@ -43,6 +43,9 @@ public class GpuiRedwoodView internal constructor(
   init {
     environment.surface.layoutController = environment.layoutController
     environment.layoutController.attachRoot(rootNode)
+    environment.theme?.backgroundColor?.let { color ->
+      rootNode.handle.setBackgroundColor(color.toULong().toUInt())
+    }
   }
 
   override val onBackPressedDispatcher: OnBackPressedDispatcher =

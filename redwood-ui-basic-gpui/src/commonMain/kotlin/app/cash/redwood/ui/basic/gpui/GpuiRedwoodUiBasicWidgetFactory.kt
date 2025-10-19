@@ -38,6 +38,11 @@ private class GpuiText(
   private val environment: GpuiEnvironment,
 ) : Text<GpuiNode> {
   private val node = environment.surface.createText()
+  init {
+    environment.theme?.textColor?.let { color ->
+      node.setTextColor(color.toULong().toUInt())
+    }
+  }
 
   override val value: GpuiNode = GpuiNode(
     handle = node.rawNode(),
@@ -61,6 +66,10 @@ private class GpuiButton(
   private val environment: GpuiEnvironment,
 ) : Button<GpuiNode> {
   private val node = environment.surface.createButton()
+  init {
+    val color = environment.theme?.buttonTextColor ?: environment.theme?.textColor
+    color?.let { node.setTextColor(it.toULong().toUInt()) }
+  }
 
   private var clickHandler: ButtonClickHandler? = null
 
