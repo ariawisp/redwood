@@ -261,9 +261,17 @@ private class GpuiLazyList(
     }
 
     val hasMapping = datasetFirst >= 0 && datasetLast >= 0
-    var first = if (hasMapping) datasetFirst else 0
-    var last = if (hasMapping) datasetLast else first
-    // Ensure we bind enough rows to visibly fill the viewport (approximate).
+    var first: Int
+    var last: Int
+    if (hasMapping) {
+      val halfWindow = targetVisible / 2
+      first = (datasetFirst - halfWindow).coerceAtLeast(0)
+      val desiredLast = (datasetLast + halfWindow).coerceAtMost(rowSlots.lastIndex)
+      last = maxOf(first, desiredLast)
+    } else {
+      first = 0
+      last = (targetVisible - 1).coerceAtMost(rowSlots.lastIndex)
+    }
     if (last - first + 1 < targetVisible) {
       last = (first + targetVisible - 1).coerceAtMost(rowSlots.lastIndex)
     }
