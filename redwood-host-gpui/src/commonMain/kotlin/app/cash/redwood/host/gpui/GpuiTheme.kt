@@ -1,7 +1,7 @@
 package app.cash.redwood.host.gpui
 
 public data class GpuiTheme(
-  val textColor: Long = 0x252525FF,
+  val textColor: Long = 0xFF252525,
   val backgroundColor: Long = 0xFFFFFFFF,
   val buttonTextColor: Long? = null,
   val textInput: GpuiTextInputTheme? = GpuiTextInputTheme(),
