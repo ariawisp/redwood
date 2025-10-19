@@ -71,7 +71,6 @@ private class GpuiLazyList(
     }
 
     override fun insertRows(index: Int, count: Int) {
-      println("[GpuiLazyList] insertRows index=$index count=$count")
       repeat(count) { offset ->
         val slotIndex = index + offset
         val slot = RowSlot(slotIndex)
@@ -102,13 +101,6 @@ private class GpuiLazyList(
       val placeholder = when (widget?.let { it::class.simpleName }) {
         "SizeOnlyPlaceholderWidget", "GpuiSpacer" -> true
         else -> false
-      }
-      println(
-        "[GpuiLazyList] setContent index=${view.index} widgetIsNull=${widget == null} " +
-          "widgetType=${widget?.let { it::class.simpleName }} placeholder=$placeholder",
-      )
-      if (!placeholder && widget != null && view.index < 5) {
-        println("[GpuiLazyList] row content preview index=${view.index} widget=${widget::class.simpleName}")
       }
       // Mount both real rows and placeholders. Placeholders are sized via createPlaceholder().
       view.setContent(widget)
@@ -217,7 +209,6 @@ private class GpuiLazyList(
       val maxIndex = (processor.size - 1).coerceAtLeast(0)
       val lastToBind = minOf(targetVisible - 1, maxIndex)
       bindVisibleRange(0, lastToBind)
-      println("[GpuiLazyList][viewport] childrenCount=0 first=0 last=$lastToBind size=${processor.size}")
       scrollProcessor.onUserScroll(0, lastToBind)
       return
     }
@@ -249,9 +240,6 @@ private class GpuiLazyList(
     // Ensure only the visible range is bound to views.
     bindVisibleRange(first, last)
 
-    println(
-      "[GpuiLazyList][viewport] childrenCount=$childrenCount first=$first last=$last size=${processor.size}",
-    )
     if (first < processor.size) {
       scrollProcessor.onUserScroll(first, last.coerceAtMost(processor.size - 1))
     }
@@ -267,7 +255,6 @@ private class GpuiLazyList(
       if (i < safeFirst || i > safeLast) {
         val binding = rowSlots[i].binding
         if (binding?.isBound == true) {
-          println("[GpuiLazyList][debug] unbinding index=$i")
           binding.unbind()
           rowSlots[i].detach()
           rowSlots[i].binding = null
@@ -280,11 +267,9 @@ private class GpuiLazyList(
       val slot = rowSlots[i]
       val binding = slot.binding
       if (binding?.isBound != true) {
-        println("[GpuiLazyList][debug] binding index=$i")
         slot.binding = processor.bind(i, slot)
       }
     }
-    println("[GpuiLazyList][debug] bindVisibleRange first=$safeFirst last=$safeLast")
   }
 
     private inner class RowSlot(
@@ -309,30 +294,24 @@ private class GpuiLazyList(
 
         val existing = widget
         if (existing != null) {
-        val ci = childIndex()
-        println("[GpuiLazyList] removing child index=$index (childIndex=$ci) type=${existing::class.simpleName}")
-        columnChildren.remove(ci, 1)
+          val ci = childIndex()
+          columnChildren.remove(ci, 1)
         }
 
         widget = newWidget
 
         if (newWidget != null) {
-        val ci = childIndex()
-        println("[GpuiLazyList] inserting child index=$index (childIndex=$ci) type=${newWidget::class.simpleName}")
-        if (index < 5) {
-          val totalChildren = newWidget.allChildren.sumOf { it.widgets.size }
-          println("[GpuiLazyList] after insert index=$index childWidgetCount=$totalChildren")
-        }
-        columnChildren.insert(ci, newWidget)
+          val ci = childIndex()
+          columnChildren.insert(ci, newWidget)
         }
       }
 
       fun detach() {
-      if (widget != null) {
-        val ci = childIndex()
-        columnChildren.remove(ci, 1)
+        if (widget != null) {
+          val ci = childIndex()
+          columnChildren.remove(ci, 1)
+        }
         widget = null
-      }
         binding = null
       }
     }
