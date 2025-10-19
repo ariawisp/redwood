@@ -46,6 +46,11 @@ private class GpuiLazyList(
   private var scrollHandle: RedwoodScrollHandle? = null
   private var topOffsetPx = 0f
   private var bottomOffsetPx = 0f
+  private val targetVisibleWindow = 12
+  private var lastBindFirst: Int = -1
+  private var lastBindLast: Int = -1
+  private var lastDetachFirst: Int = -1
+  private var lastDetachLast: Int = -1
 
   init {
     columnChildren.insert(0, topSpacer)
@@ -222,21 +227,29 @@ private class GpuiLazyList(
     bottomOffsetPx = 0f
     topSpacer.height(0.dp)
     bottomSpacer.height(0.dp)
+    lastBindFirst = -1
+    lastBindLast = -1
+    lastDetachFirst = -1
+    lastDetachLast = -1
   }
 
   private fun updateViewportForOffset() {
     val handle = ensureScrollHandle() ?: return
     if (rowSlots.isEmpty()) return
 
-    val targetVisible = 12
     val mountedRowCount = rowSlots.count { it.hasWidget() }
 
     // Bootstrap: if no children are mounted yet, bind an initial small window
     // so the loading strategy can stabilize and promote content.
     if (mountedRowCount == 0) {
       val maxIndex = (processor.size - 1).coerceAtLeast(0)
-      val lastToBind = minOf(targetVisible - 1, maxIndex)
-      bindVisibleRange(0, lastToBind)
+      val lastToBind = minOf(targetVisibleWindow - 1, maxIndex)
+      bindVisibleRange(
+        visibleFirst = 0,
+        visibleLast = lastToBind,
+        bindFirst = 0,
+        bindLast = lastToBind,
+      )
       scrollProcessor.onUserScroll(0, lastToBind)
       return
     }
@@ -247,67 +260,139 @@ private class GpuiLazyList(
     val firstChild = (firstChildRaw - 1).coerceIn(0, maxRowIndex)
     val lastChild = (lastChildRaw - 1).coerceIn(firstChild, maxRowIndex)
 
-    // Map visible child indices back to dataset indices.
-    var datasetFirst = -1
-    var datasetLast = -1
-    var runningChild = 0
-    for (i in 0 until rowSlots.size) {
-      if (rowSlots[i].hasWidget()) {
-        if (runningChild == firstChild) datasetFirst = i
-        if (runningChild == lastChild) datasetLast = i
-        if (datasetFirst != -1 && datasetLast != -1) break
-        runningChild += 1
-      }
-    }
-
-    val hasMapping = datasetFirst >= 0 && datasetLast >= 0
+    // Map visible child indices back to dataset indices without scanning all rows.
+    val currentBindStart = if (lastBindFirst >= 0) lastBindFirst else 0
+    var datasetFirst = (currentBindStart + firstChild).coerceIn(0, rowSlots.lastIndex)
+    var datasetLast = (currentBindStart + lastChild).coerceIn(datasetFirst, rowSlots.lastIndex)
+    val hasMapping = mountedRowCount > 0
     var first: Int
     var last: Int
     if (hasMapping) {
-      val halfWindow = targetVisible / 2
+      val halfWindow = targetVisibleWindow / 2
       first = (datasetFirst - halfWindow).coerceAtLeast(0)
       val desiredLast = (datasetLast + halfWindow).coerceAtMost(rowSlots.lastIndex)
       last = maxOf(first, desiredLast)
     } else {
       first = 0
-      last = (targetVisible - 1).coerceAtMost(rowSlots.lastIndex)
-    }
-    if (last - first + 1 < targetVisible) {
-      last = (first + targetVisible - 1).coerceAtMost(rowSlots.lastIndex)
+      last = (targetVisibleWindow - 1).coerceAtMost(rowSlots.lastIndex)
+  }
+    if (last - first + 1 < targetVisibleWindow) {
+      last = (first + targetVisibleWindow - 1).coerceAtMost(rowSlots.lastIndex)
     }
 
-    // Ensure only the visible range is bound to views.
-    bindVisibleRange(first, last)
+    val preloadBefore = (targetVisibleWindow / 2).coerceAtLeast(2)
+    val preloadAfter = (targetVisibleWindow / 2).coerceAtLeast(2)
+    val bindFirst = (first - preloadBefore).coerceAtLeast(0)
+    val bindLast = (last + preloadAfter).coerceAtMost(rowSlots.lastIndex)
+
+    bindVisibleRange(
+      visibleFirst = first,
+      visibleLast = last,
+      bindFirst = bindFirst,
+      bindLast = bindLast,
+    )
 
     if (first < processor.size) {
       scrollProcessor.onUserScroll(first, last.coerceAtMost(processor.size - 1))
     }
   }
 
-  private fun bindVisibleRange(first: Int, last: Int) {
+  private fun bindVisibleRange(visibleFirst: Int, visibleLast: Int, bindFirst: Int, bindLast: Int) {
     if (rowSlots.isEmpty()) return
-    val safeFirst = first.coerceAtLeast(0)
-    val safeLast = last.coerceAtLeast(safeFirst).coerceAtMost(rowSlots.lastIndex)
+    val safeBindFirst = bindFirst.coerceAtLeast(0)
+    val safeBindLast = bindLast.coerceAtLeast(safeBindFirst).coerceAtMost(rowSlots.lastIndex)
 
-    for (i in 0 until rowSlots.size) {
-      val slot = rowSlots[i]
-      when {
-        i < safeFirst -> slot.moveOffscreenBefore()
-        i > safeLast -> slot.moveOffscreenAfter()
-      }
-    }
+    val detachFirst = (visibleFirst - targetVisibleWindow).coerceAtLeast(0)
+    val detachLast = (visibleLast + targetVisibleWindow).coerceAtMost(rowSlots.lastIndex)
 
-    if (safeFirst > safeLast) {
+    if (
+      lastBindFirst == safeBindFirst &&
+      lastBindLast == safeBindLast &&
+      lastDetachFirst == detachFirst &&
+      lastDetachLast == detachLast
+    ) {
       return
     }
 
-    for (i in safeFirst..safeLast) {
-      val slot = rowSlots[i]
-      slot.prepareForAttach()
-      val binding = slot.binding
-      if (binding?.isBound == true) continue
-      slot.binding = processor.bind(i, slot)
+    val prevBindFirst = lastBindFirst
+    val prevBindLast = lastBindLast
+    val prevDetachFirst = lastDetachFirst
+    val prevDetachLast = lastDetachLast
+
+    // Update offscreen-before window (top spacer heights).
+    if (prevDetachFirst >= 0) {
+      if (detachFirst > prevDetachFirst) {
+        for (i in prevDetachFirst until detachFirst) {
+          rowSlots[i].moveOffscreenBefore()
+        }
+      } else if (detachFirst < prevDetachFirst) {
+        for (i in detachFirst until prevDetachFirst) {
+          rowSlots[i].prepareForAttach()
+        }
+      }
     }
+
+    // Update offscreen-after window (bottom spacer heights).
+    if (prevDetachLast >= 0) {
+      if (detachLast > prevDetachLast) {
+        for (i in (prevDetachLast + 1)..detachLast) {
+          rowSlots[i].moveOffscreenAfter()
+        }
+      } else if (detachLast < prevDetachLast) {
+        for (i in (detachLast + 1)..prevDetachLast) {
+          rowSlots[i].prepareForAttach()
+        }
+      }
+    }
+
+    // Shrink binding window on the left.
+    if (prevBindFirst >= 0 && safeBindFirst > prevBindFirst) {
+      for (i in prevBindFirst until safeBindFirst) {
+        if (i < detachFirst) rowSlots[i].moveOffscreenBefore() else rowSlots[i].prepareForAttach()
+      }
+    }
+
+    // Shrink binding window on the right.
+    if (prevBindLast >= 0 && safeBindLast < prevBindLast) {
+      for (i in (safeBindLast + 1)..prevBindLast) {
+        if (i > detachLast) rowSlots[i].moveOffscreenAfter() else rowSlots[i].prepareForAttach()
+      }
+    }
+
+    // Grow binding window on the left.
+    if (prevBindFirst == -1 || safeBindFirst < prevBindFirst) {
+      val start = safeBindFirst
+      val end = if (prevBindFirst == -1) safeBindLast else prevBindFirst - 1
+      for (i in start..end) {
+        rowSlots[i].prepareForAttach()
+        if (i in safeBindFirst..safeBindLast) {
+          val binding = rowSlots[i].binding
+          if (binding?.isBound != true) {
+            rowSlots[i].binding = processor.bind(i, rowSlots[i])
+          }
+        }
+      }
+    }
+
+    // Grow binding window on the right.
+    if (prevBindLast == -1 || safeBindLast > prevBindLast) {
+      val start = if (prevBindLast == -1) safeBindFirst else prevBindLast + 1
+      val end = safeBindLast
+      for (i in start..end) {
+        rowSlots[i].prepareForAttach()
+        if (i in safeBindFirst..safeBindLast) {
+          val binding = rowSlots[i].binding
+          if (binding?.isBound != true) {
+            rowSlots[i].binding = processor.bind(i, rowSlots[i])
+          }
+        }
+      }
+    }
+
+    lastBindFirst = safeBindFirst
+    lastBindLast = safeBindLast
+    lastDetachFirst = detachFirst
+    lastDetachLast = detachLast
   }
 
   private enum class SlotLocation {
