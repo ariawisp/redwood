@@ -5,6 +5,7 @@ import app.cash.redwood.host.gpui.GpuiEnvironment
 import app.cash.redwood.host.gpui.GpuiNode
 import app.cash.redwood.host.gpui.RedwoodNodeHandle
 import app.cash.redwood.host.gpui.RedwoodScrollHandle
+import app.cash.redwood.host.gpui.RedwoodUniformListAdapter
 import app.cash.redwood.host.gpui.RedwoodUniformListNode
 import app.cash.redwood.host.gpui.RedwoodUniformListRenderer
 import app.cash.redwood.layout.api.Constraint
@@ -54,7 +55,7 @@ private class GpuiLazyList(
   private val containerChildren = container.children
 
   private val uniformListHandle: RedwoodUniformListNode = environment.surface.createUniformList()
-  private val uniformListChildren = uniformListHandle.children()
+  private val uniformListAdapter: RedwoodUniformListAdapter = uniformListHandle.adapter()
   private val uniformListNode = GpuiNode(
     handle = uniformListHandle.rawNode(),
     layoutController = environment.layoutController,
@@ -71,6 +72,7 @@ private class GpuiLazyList(
       repeat(count) { offset ->
         rowSlots.add(index + offset, RowSlot(index + offset))
       }
+      uniformListAdapter.insertRows(index.toUInt(), count.toUInt())
       reindex(index)
       traceLazy { "insertRows index=$index count=$count size=${rowSlots.size}" }
     }
@@ -80,6 +82,7 @@ private class GpuiLazyList(
         val slot = rowSlots.removeAt(index + offset)
         slot.detach()
       }
+      uniformListAdapter.removeRows(index.toUInt(), count.toUInt())
       reindex(index)
       traceLazy { "deleteRows index=$index count=$count size=${rowSlots.size}" }
     }
@@ -98,6 +101,7 @@ private class GpuiLazyList(
       currentBindRange = null
       currentVisibleRange = null
       scrollHandle = null
+      uniformListAdapter.clear()
       uniformListHandle.setItemCount(0u)
       traceLazy { "detach() cleared list" }
     }
@@ -293,20 +297,9 @@ private class GpuiLazyList(
     fun setContent(widget: Widget<GpuiNode>?) {
       if (this.widget === widget) return
       traceLazy { "RowSlot.setContent index=$index hasWidget=${widget != null}" }
-      val previous = this.widget
-      if (previous != null) {
-        val ci = childIndex()
-        uniformListChildren.remove(ci.toUInt(), 1u)
-        traceLazy { "RowSlot.removeChild index=$index childIndex=$ci" }
-      }
-
       this.widget = widget
-
-      if (widget != null) {
-        val ci = childIndex()
-        uniformListChildren.insert(ci.toUInt(), widget.value.rawNode())
-        traceLazy { "RowSlot.insertChild index=$index childIndex=$ci" }
-      }
+      val handle = widget?.value?.rawNode()
+      uniformListAdapter.setContent(index.toUInt(), handle)
     }
 
     fun detach() {
@@ -316,16 +309,6 @@ private class GpuiLazyList(
         traceLazy { "RowSlot.detach index=$index" }
         setContent(null)
       }
-    }
-
-    private fun childIndex(): Int {
-      var count = 0
-      for (i in 0 until index) {
-        if (rowSlots[i].widget != null) {
-          count++
-        }
-      }
-      return count
     }
   }
 }
