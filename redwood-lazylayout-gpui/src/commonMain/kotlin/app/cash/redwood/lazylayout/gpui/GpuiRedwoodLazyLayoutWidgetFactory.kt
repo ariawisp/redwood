@@ -73,7 +73,6 @@ private class GpuiLazyList(
       repeat(count) { offset ->
         rowSlots.add(index + offset, RowSlot(index + offset))
       }
-      uniformListAdapter.insertRows(index.toUInt(), count.toUInt())
       reindex(index)
       traceLazy { "insertRows index=$index count=$count size=${rowSlots.size}" }
     }
@@ -83,7 +82,6 @@ private class GpuiLazyList(
         val slot = rowSlots.removeAt(index + offset)
         slot.detach()
       }
-      uniformListAdapter.removeRows(index.toUInt(), count.toUInt())
       reindex(index)
       traceLazy { "deleteRows index=$index count=$count size=${rowSlots.size}" }
     }
@@ -128,7 +126,6 @@ private class GpuiLazyList(
   init {
     containerChildren.insert(0, uniformListWidget)
     uniformListHandle.setRenderer(renderer)
-    uniformListHandle.setMeasureIndex(0u)
     uniformListHandle.setItemCount(0u)
   }
 
@@ -187,7 +184,11 @@ private class GpuiLazyList(
   override fun onEndChanges() {
     processor.onEndChanges()
     scrollProcessor.onEndChanges()
-    uniformListHandle.setItemCount(processor.size.toUInt())
+    val size = processor.size
+    uniformListHandle.setItemCount(size.toUInt())
+    if (size > 0) {
+      uniformListHandle.setMeasureIndex(0u)
+    }
     ensureScrollHandle()
   }
 
@@ -243,6 +244,9 @@ private class GpuiLazyList(
   }
 
   private inner class Renderer : RedwoodUniformListRenderer {
+    private var bindingInProgress = false
+    private var pendingVisibleRange: IntRange? = null
+
     override fun itemCount(): UInt {
       val size = processor.size.toUInt()
       traceLazy { "renderer.itemCount size=$size" }
@@ -277,7 +281,18 @@ private class GpuiLazyList(
       val firstIndex = first.toInt().coerceIn(0, size - 1)
       val lastIndex = last.toInt().coerceIn(firstIndex, size - 1)
       traceLazy { "renderer.onVisibleRangeChanged first=$firstIndex last=$lastIndex size=$size" }
-      updateBindings(firstIndex, lastIndex)
+
+      // Defer/serialize binding work to avoid re-entrant render->bind loops.
+      pendingVisibleRange = firstIndex..lastIndex
+      if (bindingInProgress) return
+
+      while (true) {
+        val range = pendingVisibleRange ?: break
+        pendingVisibleRange = null
+        bindingInProgress = true
+        updateBindings(range.first, range.last)
+        bindingInProgress = false
+      }
     }
   }
 
@@ -297,20 +312,12 @@ private class GpuiLazyList(
 
     fun setContent(widget: Widget<GpuiNode>?) {
       if (this.widget === widget) return
-      traceLazy { "RowSlot.setContent index=$index hasWidget=${widget != null}" }
-      val previous = this.widget
-      if (previous != null) {
-        val ci = childIndex()
-        uniformListChildren.remove(ci.toUInt(), 1u)
-        traceLazy { "RowSlot.removeChild index=$index childIndex=$ci" }
+      val nodeId = widget?.value?.rawNode()?.hashCode()
+      traceLazy {
+        "RowSlot.setContent index=$index hasWidget=${widget != null} nodeId=${nodeId ?: "null"}"
       }
 
       this.widget = widget
-      if (widget != null) {
-        val ci = childIndex()
-        uniformListChildren.insert(ci.toUInt(), widget.value.rawNode())
-        traceLazy { "RowSlot.insertChild index=$index childIndex=$ci" }
-      }
     }
 
     fun detach() {
