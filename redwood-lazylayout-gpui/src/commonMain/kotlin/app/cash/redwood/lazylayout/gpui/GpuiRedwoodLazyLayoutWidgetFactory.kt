@@ -23,6 +23,18 @@ import app.cash.redwood.widget.Widget
 import kotlin.math.max
 import kotlin.math.min
 
+private const val TRACE_ENV = "REDWOOD_LAZY_TRACE"
+
+private val traceLazyList: Boolean by lazy { traceFlagEnabled(TRACE_ENV) }
+
+private fun traceLazy(message: () -> String) {
+  if (traceLazyList) {
+    println("[redwood-lazy] ${message()}")
+  }
+}
+
+internal expect fun traceFlagEnabled(name: String): Boolean
+
 public class GpuiRedwoodLazyLayoutWidgetFactory(
   private val environment: GpuiEnvironment,
 ) : RedwoodLazyLayoutWidgetFactory<GpuiNode> {
@@ -42,6 +54,7 @@ private class GpuiLazyList(
   private val containerChildren = container.children
 
   private val uniformListHandle: RedwoodUniformListNode = environment.surface.createUniformList()
+  private val uniformListChildren = uniformListHandle.children()
   private val uniformListNode = GpuiNode(
     handle = uniformListHandle.rawNode(),
     layoutController = environment.layoutController,
@@ -59,6 +72,7 @@ private class GpuiLazyList(
         rowSlots.add(index + offset, RowSlot(index + offset))
       }
       reindex(index)
+      traceLazy { "insertRows index=$index count=$count size=${rowSlots.size}" }
     }
 
     override fun deleteRows(index: Int, count: Int) {
@@ -67,6 +81,7 @@ private class GpuiLazyList(
         slot.detach()
       }
       reindex(index)
+      traceLazy { "deleteRows index=$index count=$count size=${rowSlots.size}" }
     }
 
     override fun setContent(view: RowSlot, widget: Widget<GpuiNode>?) {
@@ -84,6 +99,7 @@ private class GpuiLazyList(
       currentVisibleRange = null
       scrollHandle = null
       uniformListHandle.setItemCount(0u)
+      traceLazy { "detach() cleared list" }
     }
   }
 
@@ -202,6 +218,10 @@ private class GpuiLazyList(
     val bindFirst = max(0, clampedFirst - preloadBefore)
     val bindLast = min(rowSlots.lastIndex, clampedLast + preloadAfter)
 
+    traceLazy {
+      "updateBindings requested=[$requestedFirst,$requestedLast] clamped=[$clampedFirst,$clampedLast] bind=[$bindFirst,$bindLast] size=${rowSlots.size}"
+    }
+
     for (index in bindFirst..bindLast) {
       rowSlots[index].ensureBound()
     }
@@ -218,14 +238,24 @@ private class GpuiLazyList(
   }
 
   private inner class Renderer : RedwoodUniformListRenderer {
-    override fun itemCount(): UInt = processor.size.toUInt()
+    override fun itemCount(): UInt {
+      val size = processor.size.toUInt()
+      traceLazy { "renderer.itemCount size=$size" }
+      return size
+    }
 
     override fun renderItem(index: UInt): RedwoodNodeHandle {
       val slot = rowSlots.getOrNull(index.toInt())
       if (slot == null) {
+        traceLazy { "renderer.renderItem index=$index -> placeholder (missing slot)" }
         return RedwoodNodeHandle.placeholder()
       }
-      val node = slot.ensureBound() ?: return RedwoodNodeHandle.placeholder()
+      val node = slot.ensureBound()
+      if (node == null) {
+        traceLazy { "renderer.renderItem index=$index -> placeholder (no node)" }
+        return RedwoodNodeHandle.placeholder()
+      }
+      traceLazy { "renderer.renderItem index=$index -> node" }
       return node.rawNode()
     }
 
@@ -236,10 +266,12 @@ private class GpuiLazyList(
         currentBindRange = null
         rowSlots.forEach { it.detach() }
         scrollProcessor.onUserScroll(0, 0)
+        traceLazy { "renderer.onVisibleRangeChanged first=$first last=$last (empty)" }
         return
       }
       val firstIndex = first.toInt().coerceIn(0, size - 1)
       val lastIndex = last.toInt().coerceIn(firstIndex, size - 1)
+      traceLazy { "renderer.onVisibleRangeChanged first=$firstIndex last=$lastIndex size=$size" }
       updateBindings(firstIndex, lastIndex)
     }
   }
@@ -253,18 +285,47 @@ private class GpuiLazyList(
     fun ensureBound(): GpuiNode? {
       if (binding?.isBound != true) {
         binding = processor.bind(index, this)
+        traceLazy { "RowSlot.ensureBound index=$index -> bound" }
       }
       return widget?.value
     }
 
     fun setContent(widget: Widget<GpuiNode>?) {
+      if (this.widget === widget) return
+      traceLazy { "RowSlot.setContent index=$index hasWidget=${widget != null}" }
+      val previous = this.widget
+      if (previous != null) {
+        val ci = childIndex()
+        uniformListChildren.remove(ci.toUInt(), 1u)
+        traceLazy { "RowSlot.removeChild index=$index childIndex=$ci" }
+      }
+
       this.widget = widget
+
+      if (widget != null) {
+        val ci = childIndex()
+        uniformListChildren.insert(ci.toUInt(), widget.value.rawNode())
+        traceLazy { "RowSlot.insertChild index=$index childIndex=$ci" }
+      }
     }
 
     fun detach() {
       binding?.unbind()
       binding = null
-      widget = null
+      if (widget != null) {
+        traceLazy { "RowSlot.detach index=$index" }
+        setContent(null)
+      }
+    }
+
+    private fun childIndex(): Int {
+      var count = 0
+      for (i in 0 until index) {
+        if (rowSlots[i].widget != null) {
+          count++
+        }
+      }
+      return count
     }
   }
 }
