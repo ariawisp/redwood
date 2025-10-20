@@ -127,6 +127,10 @@ private class GpuiLazyList(
     containerChildren.insert(0, uniformListWidget)
     uniformListHandle.setRenderer(renderer)
     uniformListHandle.setItemCount(0u)
+    // Ensure the list fills its container so the viewport has non-zero height.
+    uniformListNode.wantsFillWidth = true
+    uniformListNode.wantsFillHeight = true
+    uniformListNode.markNeedsLayout()
   }
 
   override var modifier: Modifier
@@ -282,6 +286,13 @@ private class GpuiLazyList(
       val lastIndex = last.toInt().coerceIn(firstIndex, size - 1)
       traceLazy { "renderer.onVisibleRangeChanged first=$firstIndex last=$lastIndex size=$size" }
 
+      // Skip if unchanged to avoid redundant work/logs.
+      currentVisibleRange?.let { prev ->
+        if (prev.first == firstIndex && prev.last == lastIndex) {
+          return
+        }
+      }
+
       // Defer/serialize binding work to avoid re-entrant render->bind loops.
       pendingVisibleRange = firstIndex..lastIndex
       if (bindingInProgress) return
@@ -316,8 +327,19 @@ private class GpuiLazyList(
       traceLazy {
         "RowSlot.setContent index=$index hasWidget=${widget != null} nodeId=${nodeId ?: "null"}"
       }
+      val previous = this.widget
+      if (previous != null) {
+        val ci = childIndex()
+        uniformListChildren.remove(ci.toUInt(), 1u)
+        traceLazy { "RowSlot.removeChild index=$index childIndex=$ci" }
+      }
 
       this.widget = widget
+      if (widget != null) {
+        val ci = childIndex()
+        uniformListChildren.insert(ci.toUInt(), widget.value.rawNode())
+        traceLazy { "RowSlot.insertChild index=$index childIndex=$ci" }
+      }
     }
 
     fun detach() {
@@ -327,6 +349,7 @@ private class GpuiLazyList(
         traceLazy { "RowSlot.detach index=$index" }
         setContent(null)
       }
+      // No uniformListAdapter cache writes here; Rust caches in render path.
     }
 
     private fun childIndex(): Int {
