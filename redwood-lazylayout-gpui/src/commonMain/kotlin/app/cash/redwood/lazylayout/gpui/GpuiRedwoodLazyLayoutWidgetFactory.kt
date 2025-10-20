@@ -298,19 +298,8 @@ private class GpuiLazyList(
     fun setContent(widget: Widget<GpuiNode>?) {
       if (this.widget === widget) return
       traceLazy { "RowSlot.setContent index=$index hasWidget=${widget != null}" }
-      val previous = this.widget
-      if (previous != null) {
-        val ci = childIndex()
-        uniformListChildren.remove(ci.toUInt(), 1u)
-        traceLazy { "RowSlot.removeChild index=$index childIndex=$ci" }
-      }
-
       this.widget = widget
-      if (widget != null) {
-        val ci = childIndex()
-        uniformListChildren.insert(ci.toUInt(), widget.value.rawNode())
-        traceLazy { "RowSlot.insertChild index=$index childIndex=$ci" }
-      }
+      uniformListAdapter.cacheNode(index.toUInt(), widget?.value?.rawNode())
     }
 
     fun detach() {
@@ -320,17 +309,10 @@ private class GpuiLazyList(
         traceLazy { "RowSlot.detach index=$index" }
         setContent(null)
       }
+      uniformListAdapter.cacheNode(index.toUInt(), null)
     }
 
-    private fun childIndex(): Int {
-      var count = 0
-      for (i in 0 until index) {
-        if (rowSlots[i].widget != null) {
-          count++
-        }
-      }
-      return count
-    }
+    private fun childIndex(): Int = 0 // unused with adapter-driven rendering
   }
 }
 
