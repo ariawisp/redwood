@@ -191,6 +191,8 @@ private class GpuiLazyList(
     val size = processor.size
     uniformListHandle.setItemCount(size.toUInt())
     if (size > 0) {
+      // Bind the first row before measuring so the row has non-zero height.
+      updateBindings(0, 0)
       uniformListHandle.setMeasureIndex(0u)
     }
     ensureScrollHandle()
