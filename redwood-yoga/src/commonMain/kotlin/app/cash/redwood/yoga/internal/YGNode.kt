@@ -37,6 +37,15 @@ internal class YGNode {
   var dirtied: YGDirtiedFunc? = null
   var style: YGStyle = YGStyle()
   var layout: YGLayout? = YGLayout()
+
+  private fun ensureLayout(): YGLayout {
+    var l = layout
+    if (l == null) {
+      l = YGLayout()
+      layout = l
+    }
+    return l
+  }
   var lineIndex = 0
   var owner: YGNode? = null
   var children = mutableListOf<YGNode>()
@@ -399,49 +408,47 @@ internal class YGNode {
   }
 
   fun setLayoutDirection(direction: YGDirection?) {
-    layout!!.setDirection(direction!!)
+    ensureLayout().setDirection(direction!!)
   }
 
   fun setLayoutMargin(margin: Float, index: Int) {
-    layout!!.margin[index] = margin
+    ensureLayout().margin[index] = margin
   }
 
   fun setLayoutBorder(border: Float, index: Int) {
-    layout!!.border[index] = border
+    ensureLayout().border[index] = border
   }
 
   fun setLayoutPadding(padding: Float, index: Int) {
-    layout!!.padding[index] = padding
+    ensureLayout().padding[index] = padding
   }
 
   fun setLayoutLastOwnerDirection(direction: YGDirection?) {
-    layout!!.lastOwnerDirection = direction!!
+    ensureLayout().lastOwnerDirection = direction!!
   }
 
   fun setLayoutComputedFlexBasis(computedFlexBasis: YGFloatOptional?) {
-    if (layout != null) {
-      layout!!.computedFlexBasis = computedFlexBasis!!
-    }
+    ensureLayout().computedFlexBasis = computedFlexBasis!!
   }
 
   fun setLayoutPosition(position: Float, index: Int) {
-    layout!!.position[index] = position
+    ensureLayout().position[index] = position
   }
 
   fun setLayoutComputedFlexBasisGeneration(computedFlexBasisGeneration: Int) {
-    layout!!.computedFlexBasisGeneration = computedFlexBasisGeneration
+    ensureLayout().computedFlexBasisGeneration = computedFlexBasisGeneration
   }
 
   fun setLayoutMeasuredDimension(measuredDimension: Float, index: Int) {
-    layout!!.measuredDimensions[index] = measuredDimension
+    ensureLayout().measuredDimensions[index] = measuredDimension
   }
 
   fun setLayoutHadOverflow(hadOverflow: Boolean) {
-    layout!!.setHadOverflow(hadOverflow)
+    ensureLayout().setHadOverflow(hadOverflow)
   }
 
   fun setLayoutDimension(dimension: Float, index: Int) {
-    layout!!.dimensions[index] = dimension
+    ensureLayout().dimensions[index] = dimension
   }
 
   fun relativePosition(axis: YGFlexDirection, axisSize: Float): YGFloatOptional {
@@ -840,4 +847,4 @@ internal class YGNode {
       }
     }
   }
-}
+  }

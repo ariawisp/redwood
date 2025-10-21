@@ -1,0 +1,25 @@
+import static app.cash.redwood.buildsupport.TargetGroup.ToolkitDesktopGpui
+
+redwoodBuild {
+  targets(ToolkitDesktopGpui)
+}
+
+kotlin {
+  sourceSets {
+    commonMain {
+      dependencies {
+        implementation projects.redwoodUiBasicWidget
+        implementation projects.redwoodUiBasicApi
+        implementation projects.redwoodUiBasicModifiers
+        implementation projects.redwoodRuntime
+        implementation projects.redwoodHostGpui
+        implementation projects.redwoodLazylayoutGpui
+      }
+    }
+    commonTest {
+      dependencies {
+        implementation libs.kotlin.test
+      }
+    }
+  }
+}

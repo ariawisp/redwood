@@ -1,0 +1,74 @@
+import java.util.Locale
+
+plugins {
+  id 'org.jetbrains.kotlin.multiplatform'
+}
+
+def osName = System.getProperty("os.name").toLowerCase(Locale.ROOT)
+def archName = System.getProperty("os.arch").toLowerCase(Locale.ROOT)
+def isMac = osName.contains("mac")
+def isLinux = osName.contains("nux") || osName.contains("linux")
+def isWindows = osName.contains("win")
+
+kotlin {
+if (isMac) {
+    if (archName.contains("aarch64") || archName.contains("arm64")) {
+      macosArm64 {
+        binaries {
+          executable {
+            entryPoint = 'app.cash.redwood.samples.gpui.main'
+          }
+        }
+      }
+    } else {
+      macosX64 {
+        binaries {
+          executable {
+            entryPoint = 'app.cash.redwood.samples.gpui.main'
+          }
+        }
+      }
+    }
+  }
+  if (isLinux) {
+    if (archName.contains("aarch64") || archName.contains("arm64")) {
+      linuxArm64 {
+        binaries {
+          executable {
+            entryPoint = 'app.cash.redwood.samples.gpui.main'
+          }
+        }
+      }
+    } else {
+      linuxX64 {
+        binaries {
+          executable {
+            entryPoint = 'app.cash.redwood.samples.gpui.main'
+          }
+        }
+      }
+    }
+  }
+  if (isWindows) {
+    mingwX64 {
+      binaries {
+        executable {
+          entryPoint = 'app.cash.redwood.samples.gpui.main'
+        }
+      }
+    }
+  }
+
+  sourceSets {
+    commonMain {
+      dependencies {
+        implementation projects.redwoodHostGpui
+        implementation projects.redwoodLayoutGpui
+        implementation projects.redwoodUiBasicGpui
+        implementation projects.redwoodLayoutApi
+        implementation projects.redwoodUiBasicApi
+        implementation projects.redwoodRuntime
+      }
+    }
+  }
+}

@@ -73,6 +73,7 @@ enum class TargetGroup {
   ToolkitIos,
   ToolkitHtml,
   ToolkitComposeUi,
+  ToolkitDesktopGpui,
 
   /** [TreehouseHost] + [TreehouseGuest] */
   TreehouseCommon,
@@ -131,6 +132,15 @@ enum class JsTests : TargetModifier {
 
   override val key get() = Companion
   companion object : TargetModifier.Key<JsTests>
+}
+
+enum class DesktopTargets : TargetModifier {
+  Enable,
+  Disable,
+  ;
+
+  override val key get() = Companion
+  companion object : TargetModifier.Key<DesktopTargets>
 }
 
 class ModifiedTargetGroup(

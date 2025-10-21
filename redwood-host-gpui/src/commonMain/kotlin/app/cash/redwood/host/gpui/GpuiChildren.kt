@@ -1,0 +1,94 @@
+/*
+ * Copyright (C) 2025 Square, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package app.cash.redwood.host.gpui
+
+import app.cash.redwood.Modifier
+import app.cash.redwood.widget.Widget
+
+private const val DEBUG_CHILDREN = false
+
+public class GpuiChildren(
+  private val environment: GpuiEnvironment,
+  private val handle: RedwoodChildrenHandle,
+  private val parentNode: GpuiNode,
+) : Widget.Children<GpuiNode> {
+  private val widgetsList = mutableListOf<Widget<GpuiNode>>()
+
+  override val widgets: List<Widget<GpuiNode>>
+    get() = widgetsList
+
+  override fun insert(index: Int, widget: Widget<GpuiNode>) {
+    widgetsList.add(index, widget)
+    parentNode.attachChild(index, widget.value)
+    handle.insert(index.toUInt(), widget.value.handle)
+    applyModifier(widget, widget.modifier)
+    environment.layoutController.onTreeChanged()
+  }
+
+  override fun move(fromIndex: Int, toIndex: Int, count: Int) {
+    if (count == 0 || fromIndex == toIndex) return
+
+    handle.moveRange(fromIndex.toUInt(), toIndex.toUInt(), count.toUInt())
+
+    val movingWidgets = widgetsList.subList(fromIndex, fromIndex + count).toList()
+    repeat(count) {
+      widgetsList.removeAt(fromIndex)
+    }
+    val destination = if (toIndex > fromIndex) toIndex - count else toIndex
+    widgetsList.addAll(destination, movingWidgets)
+
+    val movingNodes = mutableListOf<GpuiNode>()
+    repeat(count) {
+      movingNodes += parentNode.detachChild(fromIndex)
+    }
+    movingNodes.forEachIndexed { offset, child ->
+      parentNode.attachChild(destination + offset, child)
+    }
+
+    environment.layoutController.onTreeChanged()
+  }
+
+  override fun remove(index: Int, count: Int) {
+    if (count == 0) return
+
+    handle.remove(index.toUInt(), count.toUInt())
+    repeat(count) {
+      widgetsList.removeAt(index)
+      parentNode.detachChild(index)
+      // Do NOT dispose the removed widget here. Lazy lists frequently demote
+      // and later re-promote the same widget instance; disposing its GPUI node
+      // would make subsequent inserts fail with AlreadyDisposed.
+    }
+    environment.layoutController.onTreeChanged()
+  }
+
+  override fun onModifierUpdated(index: Int, widget: Widget<GpuiNode>) {
+    applyModifier(widget, widget.modifier)
+  }
+
+  override fun detach() {
+    handle.detach()
+    while (parentNode.layoutChildren.isNotEmpty()) {
+      parentNode.detachChild(parentNode.layoutChildren.lastIndex).dispose()
+    }
+    widgetsList.clear()
+    environment.layoutController.onTreeChanged()
+  }
+
+  public fun applyModifier(widget: Widget<GpuiNode>, modifier: Modifier) {
+    widget.value.applyModifier(modifier, environment.density)
+  }
+}

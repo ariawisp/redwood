@@ -1,7 +1,8 @@
 import static app.cash.redwood.buildsupport.TargetGroup.Common
+import static app.cash.redwood.buildsupport.DesktopTargets.Enable
 
 redwoodBuild {
-  targets(Common)
+  targets(Common + Enable)
   publishing()
 }
 
